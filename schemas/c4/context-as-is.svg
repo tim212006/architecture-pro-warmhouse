@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="843px" preserveAspectRatio="none" style="width:544px;height:843px;" version="1.1" viewBox="0 0 544 843" width="544px" zoomAndPan="magnify"><defs/><g><text fill="#000000" font-family="sans-serif" font-size="18" lengthAdjust="spacingAndGlyphs" textLength="530" x="2" y="19.2419">Контекстная диаграмма C4 — монолит «Тёплый дом» (As-Is)</text><!--MD5=[55f2968de154b8cc740615bf6e5af92f]
+entity owner--><rect fill="#08427B" height="172.5437" style="stroke: #073B6F; stroke-width: 1.5;" width="206" x="27.5" y="32.5058"/><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="49" x="106" y="55.3339">«person»</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="130" x="65.5" y="75.954">Владелец дома</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="0" x="132.5" y="95.6079"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="111" x="75" y="114.6759">Пользуется веб-</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="182" x="37.5" y="133.7438">интерфейсом: включает и</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="160" x="48.5" y="152.8117">выключает отопление,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="122" x="67.5" y="171.8796">смотрит текущую</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="89" x="86" y="190.9475">температуру</text><!--MD5=[55ae081d2a0bfa83f0dc0ea7852a3bc4]
+entity engineer--><rect fill="#08427B" height="134.4078" style="stroke: #073B6F; stroke-width: 1.5;" width="220" x="268.5" y="51.5758"/><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="49" x="354" y="74.4039">«person»</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="176" x="290.5" y="95.024">Сервисный инженер</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="0" x="380.5" y="114.6779"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="146" x="303.5" y="133.7459">Выезжает на объект,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="196" x="278.5" y="152.8138">регистрирует и подключает</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="192" x="282.5" y="171.8817">модуль отопления и датчик</text><!--MD5=[fdbc32b5e31ee40d1ed7eebad5c75b5c]
+entity monolith--><rect fill="#1168BD" height="175.2678" style="stroke: #3C7FC0; stroke-width: 1.5;" width="217" x="146" y="354.0458"/><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="49" x="230" y="376.8739">«system»</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="194" x="157.5" y="397.494">Монолит «Тёплый дом</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="10" x="249.5" y="419.286">»</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="0" x="256.5" y="438.94"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="115" x="195" y="458.0079">Go + PostgreSQL.</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="186" x="159.5" y="477.0758">Управление отоплением и</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="193" x="156" y="496.1437">мониторинг температуры в</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="136" x="186.5" y="515.2117">одном приложении</text><!--MD5=[b35eb772db9bf0b8ac45398274ec7725]
+entity heatingModule--><rect fill="#999999" height="156.1999" style="stroke: #8A8A8A; stroke-width: 1.5;" width="204" x="32.5" y="676.3158"/><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="98" x="85.5" y="699.1439">«external_system»</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="169" x="48" y="719.764">Модуль управления</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="104" x="82.5" y="741.556">отоплением</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="0" x="136.5" y="761.21"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="133" x="66" y="780.2779">Устройство в доме,</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="138" x="63.5" y="799.3458">исполняет команды</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="184" x="42.5" y="818.4137">включения и выключения</text><!--MD5=[1f645b45e85026672c5a25cd9608c18c]
+entity tempSensor--><rect fill="#999999" height="134.4078" style="stroke: #8A8A8A; stroke-width: 1.5;" width="207" x="271" y="687.2158"/><text fill="#FFFFFF" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="98" x="325.5" y="710.0439">«external_system»</text><text fill="#FFFFFF" font-family="sans-serif" font-size="16" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="181" x="284" y="730.664">Датчик температуры</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="0" x="376.5" y="750.3179"/><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="183" x="281" y="769.3859">Устройство в доме, отдаёт</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="129" x="308" y="788.4538">текущее значение</text><text fill="#FFFFFF" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="93" x="328" y="807.5217">температуры</text><!--MD5=[960211060b41c1a4cb636e1378e561d3]
+link owner to monolith--><path d="M163.57,205.3558 C180.53,249.2458 201.21,302.7658 218.56,347.6758 " fill="none" id="owner-&gt;monolith" style="stroke: #666666; stroke-width: 1.0;"/><polygon fill="#666666" points="220.33,352.2558,220.8164,342.419,218.5274,347.5921,213.3544,345.3031,220.33,352.2558" style="stroke: #666666; stroke-width: 1.0;"/><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="72" x="224.75" y="249.9429">Управляет</text><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="88" x="216.75" y="267.6489">отоплением,</text><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="105" x="208.25" y="285.3549">просматривает</text><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="87" x="218.75" y="303.0609">температуру</text><text fill="#666666" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="39" x="242.75" y="319.698">[HTTPS]</text><!--MD5=[d932a7d7d9bf826ef36be5ca33ea4413]
+link engineer to monolith--><path d="M366.41,186.2458 C357.75,226.9958 344.28,279.6758 325.5,324.0458 C322.12,332.0258 318.26,340.1158 314.12,348.0958 " fill="none" id="engineer-&gt;monolith" style="stroke: #666666; stroke-width: 1.0;"/><polygon fill="#666666" points="311.92,352.2758,319.6571,346.1818,314.2529,347.8534,312.5812,342.4492,311.92,352.2758" style="stroke: #666666; stroke-width: 1.0;"/><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="135" x="355.53" y="258.9429">Регистрирует дом и</text><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="84" x="381.03" y="276.6489">подключает</text><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="76" x="386.53" y="294.3549">устройства</text><text fill="#666666" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="94" x="377.53" y="310.992">[Веб-интерфейс]</text><!--MD5=[b42bf3d7c28fe9b588a7aba44e8579c7]
+link monolith to heatingModule--><path d="M194.05,529.7558 C188.65,539.4858 183.67,549.4458 179.5,559.3158 C164.74,594.2558 154.37,634.8758 147.33,669.9058 " fill="none" id="monolith-&gt;heatingModule" style="stroke: #666666; stroke-width: 1.0;"/><polygon fill="#666666" points="146.44,674.4358,152.1138,666.3855,147.4123,669.5313,144.2666,664.8298,146.44,674.4358" style="stroke: #666666; stroke-width: 1.0;"/><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="147" x="180.5" y="574.2129">Отправляет команды</text><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="104" x="202" y="591.9189">и запрашивает</text><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="71" x="220" y="609.6249">состояние</text><text fill="#666666" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="118" x="195" y="626.262">[HTTP, инициатор —</text><text fill="#666666" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="40" x="235.5" y="642.6061">сервер]</text><!--MD5=[b80b42e2a28591b8554c72b9c8ed0266]
+link monolith to tempSensor--><path d="M320.4,529.6358 C326.07,539.3458 331.25,549.3358 335.5,559.3158 C351.8,597.5758 361.4,643.0358 367,680.3358 " fill="none" id="monolith-&gt;tempSensor" style="stroke: #666666; stroke-width: 1.0;"/><polygon fill="#666666" points="367.71,685.2258,370.3817,675.7463,366.9949,680.2772,362.4639,676.8905,367.71,685.2258" style="stroke: #666666; stroke-width: 1.0;"/><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="93" x="373.73" y="574.2129">Запрашивает</text><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="61" x="389.73" y="591.9189">текущую</text><text fill="#666666" font-family="sans-serif" font-size="13" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="87" x="378.23" y="609.6249">температуру</text><text fill="#666666" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="118" x="361.23" y="626.262">[HTTP, инициатор —</text><text fill="#666666" font-family="sans-serif" font-size="12" font-style="italic" lengthAdjust="spacingAndGlyphs" textLength="40" x="401.73" y="642.6061">сервер]</text><!--MD5=[8f1c1ba8e604cca1a7dd9e35cb8e81c3]
+@startuml
+
+
+
+
+
+skinparam defaultTextAlignment center
+
+skinparam wrapWidth 200
+skinparam maxMessageSize 150
+
+skinparam rectangle {
+    StereotypeFontSize 12
+    shadowing false
+}
+
+skinparam database {
+    StereotypeFontSize 12
+    shadowing false
+}
+
+skinparam Arrow {
+    Color #666666
+    FontColor #666666
+    FontSize 12
+}
+
+skinparam rectangle<<boundary>> {
+    Shadowing false
+    StereotypeFontSize 0
+    FontColor #444444
+    BorderColor #444444
+    BorderStyle dashed
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+skinparam rectangle<<person>> {
+    StereotypeFontColor #FFFFFF
+    FontColor #FFFFFF
+    BackgroundColor #08427B
+    BorderColor #073B6F
+}
+
+skinparam rectangle<<external_person>> {
+    StereotypeFontColor #FFFFFF
+    FontColor #FFFFFF
+    BackgroundColor #686868
+    BorderColor #8A8A8A
+}
+
+skinparam rectangle<<system>> {
+    StereotypeFontColor #FFFFFF
+    FontColor #FFFFFF
+    BackgroundColor #1168BD
+    BorderColor #3C7FC0
+}
+
+skinparam rectangle<<external_system>> {
+    StereotypeFontColor #FFFFFF
+    FontColor #FFFFFF
+    BackgroundColor #999999
+    BorderColor #8A8A8A
+}
+
+skinparam database<<system>> {
+    StereotypeFontColor #FFFFFF
+    FontColor #FFFFFF
+    BackgroundColor #1168BD
+    BorderColor #3C7FC0
+}
+
+skinparam database<<external_system>> {
+    StereotypeFontColor #FFFFFF
+    FontColor #FFFFFF
+    BackgroundColor #999999
+    BorderColor #8A8A8A
+}
+
+
+
+
+
+
+
+
+
+
+
+
+title Контекстная диаграмма C4 — монолит «Тёплый дом» (As-Is)
+
+rectangle "==Владелец дома\n\n Пользуется веб-интерфейсом: включает и выключает отопление, смотрит текущую температуру" <<person>> as owner
+rectangle "==Сервисный инженер\n\n Выезжает на объект, регистрирует и подключает модуль отопления и датчик" <<person>> as engineer
+
+rectangle "==Монолит «Тёплый дом»\n\n Go + PostgreSQL. Управление отоплением и мониторинг температуры в одном приложении" <<system>> as monolith
+
+rectangle "==Модуль управления отоплением\n\n Устройство в доме, исполняет команды включения и выключения" <<external_system>> as heatingModule
+rectangle "==Датчик температуры\n\n Устройство в доме, отдаёт текущее значение температуры" <<external_system>> as tempSensor
+
+owner - -> monolith : "===Управляет отоплением, просматривает температуру\n//<size:12>[HTTPS]</size>//"
+engineer - -> monolith : "===Регистрирует дом и подключает устройства\n//<size:12>[Веб-интерфейс]</size>//"
+monolith - -> heatingModule : "===Отправляет команды и запрашивает состояние\n//<size:12>[HTTP, инициатор — сервер]</size>//"
+monolith - -> tempSensor : "===Запрашивает текущую температуру\n//<size:12>[HTTP, инициатор — сервер]</size>//"
+
+@enduml
+
+PlantUML version 1.2020.02(Sun Mar 01 13:22:07 MSK 2020)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Java Version: 25.0.4.1+1-1-26.04.4-Ubuntu
+Operating System: Linux
+Default Encoding: UTF-8
+Language: ru
+Country: RU
+--></g></svg>
