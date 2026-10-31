@@ -1,0 +1,335 @@
+openapi: 3.0.3
+info:
+  title: Telemetry Service API
+  version: 1.0.0
+  description: |
+    API сервиса телеметрии экосистемы «Тёплый дом».
+
+    Сервис принимает показания устройств из событий `telemetry.recorded`
+    и отдаёт их для графиков и истории. Запись выполняется асинхронно,
+    чтение — синхронно через API Gateway.
+
+    Все защищённые методы требуют JWT в заголовке `Authorization: Bearer <token>`.
+    Ошибки возвращаются в едином формате `Error`.
+  contact:
+    name: Warm House Architecture Team
+servers:
+  - url: https://api.warmhouse.example.com/api/v1
+    description: Production через API Gateway
+  - url: http://localhost:8083/api/v1
+    description: Локальный запуск telemetry-service
+tags:
+  - name: Telemetry
+    description: Чтение показаний устройств
+security:
+  - bearerAuth: []
+paths:
+  /houses/{houseId}/telemetry:
+    get:
+      tags:
+        - Telemetry
+      operationId: getHouseTelemetry
+      summary: Получить телеметрию дома
+      description: |
+        Возвращает временные ряды показаний по всем устройствам дома или
+        по одному устройству. Для больших интервалов можно запросить
+        агрегацию с шагом `interval`.
+      parameters:
+        - $ref: '#/components/parameters/HouseId'
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/Metric'
+        - $ref: '#/components/parameters/From'
+        - $ref: '#/components/parameters/To'
+        - $ref: '#/components/parameters/Aggregation'
+        - $ref: '#/components/parameters/Interval'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Временные ряды телеметрии
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryResponse'
+              examples:
+                temperatureHistory:
+                  summary: Температура в гостиной за час
+                  value:
+                    houseId: 7d3f1e2a-8b4c-4d5e-9f6a-2b3c4d5e6f70
+                    from: '2026-10-31T09:00:00Z'
+                    to: '2026-10-31T10:00:00Z'
+                    aggregation: avg
+                    interval: 15m
+                    series:
+                      - deviceId: 0f5b7d0e-6d8a-4a7c-9f4e-1f1f4a7c9f4e
+                        metric: temperature
+                        unit: celsius
+                        points:
+                          - timestamp: '2026-10-31T09:00:00Z'
+                            value: 21.4
+                          - timestamp: '2026-10-31T09:15:00Z'
+                            value: 21.6
+                          - timestamp: '2026-10-31T09:30:00Z'
+                            value: 21.9
+                          - timestamp: '2026-10-31T09:45:00Z'
+                            value: 22.1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT пользователя, выданный Access Service.
+
+  parameters:
+    HouseId:
+      name: houseId
+      in: path
+      required: true
+      description: Идентификатор дома.
+      schema:
+        type: string
+        format: uuid
+        example: 7d3f1e2a-8b4c-4d5e-9f6a-2b3c4d5e6f70
+    DeviceId:
+      name: deviceId
+      in: query
+      required: false
+      description: Ограничить выборку одним устройством.
+      schema:
+        type: string
+        format: uuid
+        example: 0f5b7d0e-6d8a-4a7c-9f4e-1f1f4a7c9f4e
+    Metric:
+      name: metric
+      in: query
+      required: false
+      description: Название метрики, например `temperature` или `humidity`.
+      schema:
+        type: string
+        example: temperature
+    From:
+      name: from
+      in: query
+      required: true
+      description: Начало интервала включительно.
+      schema:
+        type: string
+        format: date-time
+        example: '2026-10-31T09:00:00Z'
+    To:
+      name: to
+      in: query
+      required: true
+      description: Конец интервала включительно. Должен быть позже `from`.
+      schema:
+        type: string
+        format: date-time
+        example: '2026-10-31T10:00:00Z'
+    Aggregation:
+      name: aggregation
+      in: query
+      required: false
+      description: Агрегация точек внутри интервала `interval`.
+      schema:
+        type: string
+        enum:
+          - raw
+          - avg
+          - min
+          - max
+        default: raw
+    Interval:
+      name: interval
+      in: query
+      required: false
+      description: Шаг агрегации. Обязателен, если `aggregation` не `raw`.
+      schema:
+        type: string
+        pattern: '^[0-9]+(s|m|h|d)$'
+        example: 15m
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Максимальное число точек в каждом ряду.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 5000
+        default: 500
+
+  schemas:
+    TelemetryResponse:
+      type: object
+      required:
+        - houseId
+        - from
+        - to
+        - aggregation
+        - series
+      properties:
+        houseId:
+          type: string
+          format: uuid
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        aggregation:
+          type: string
+          enum:
+            - raw
+            - avg
+            - min
+            - max
+        interval:
+          type: string
+          nullable: true
+          example: 15m
+        series:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelemetrySeries'
+
+    TelemetrySeries:
+      type: object
+      required:
+        - deviceId
+        - metric
+        - unit
+        - points
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        metric:
+          type: string
+          example: temperature
+        unit:
+          type: string
+          example: celsius
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelemetryPoint'
+
+    TelemetryPoint:
+      type: object
+      required:
+        - timestamp
+        - value
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-10-31T09:00:00Z'
+        value:
+          type: number
+          format: double
+          example: 21.4
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Машиночитаемый код ошибки.
+          example: INVALID_TIME_RANGE
+        message:
+          type: string
+          description: Понятное человеку описание.
+          example: Параметр from должен быть раньше to
+        details:
+          type: object
+          additionalProperties: true
+          description: Дополнительный контекст ошибки.
+        traceId:
+          type: string
+          description: Идентификатор запроса для поиска в логах.
+          example: 4f9c2a7e1b8d4c6a
+
+  responses:
+    BadRequest:
+      description: Некорректные параметры запроса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            invalidRange:
+              value:
+                code: INVALID_TIME_RANGE
+                message: Параметр from должен быть раньше to
+                details:
+                  from: '2026-10-31T10:00:00Z'
+                  to: '2026-10-31T09:00:00Z'
+                traceId: 4f9c2a7e1b8d4c6a
+            missingInterval:
+              value:
+                code: INTERVAL_REQUIRED
+                message: Для агрегации нужно передать interval
+                traceId: 4f9c2a7e1b8d4c6a
+    Unauthorized:
+      description: Пользователь не аутентифицирован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            unauthorized:
+              value:
+                code: UNAUTHORIZED
+                message: Требуется действительный JWT
+                traceId: 4f9c2a7e1b8d4c6a
+    Forbidden:
+      description: Нет доступа к дому
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            forbidden:
+              value:
+                code: FORBIDDEN
+                message: Нет доступа к телеметрии дома
+                traceId: 4f9c2a7e1b8d4c6a
+    NotFound:
+      description: Дом не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            houseNotFound:
+              value:
+                code: HOUSE_NOT_FOUND
+                message: Дом не найден
+                traceId: 4f9c2a7e1b8d4c6a
+    InternalServerError:
+      description: Внутренняя ошибка сервиса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            internal:
+              value:
+                code: INTERNAL_ERROR
+                message: Внутренняя ошибка сервиса
+                traceId: 4f9c2a7e1b8d4c6a

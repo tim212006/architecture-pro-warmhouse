@@ -1,0 +1,333 @@
+asyncapi: '3.1.0'
+id: 'urn:com:warmhouse:events'
+info:
+  title: Warm House Event API
+  version: 1.0.0
+  description: |
+    Каталог асинхронных событий экосистемы «Тёплый дом».
+
+    События публикуются в NATS и используются для передачи телеметрии,
+    изменения состояния устройств и доставки команд. В этом документе
+    операция `send` описывает публикацию события сервисом-издателем,
+    а `receive` — подписку сервиса-потребителя.
+
+    У каждого события есть общие заголовки: `eventId`, `eventType`,
+    `occurredAt` и `traceId`. Идентификатор `eventId` используется для
+    дедупликации на стороне потребителя.
+  contact:
+    name: Warm House Architecture Team
+    url: https://github.com/tim212006/architecture-pro-warmhouse
+    email: architecture@warmhouse.example.com
+  license:
+    name: Proprietary
+  tags:
+    - name: telemetry
+      description: Показания устройств и временные ряды
+    - name: devices
+      description: Состояние устройств и события жизненного цикла
+    - name: commands
+      description: Доставка команд на устройства
+servers:
+  production:
+    host: 'events.warmhouse.internal:4222'
+    protocol: nats
+    description: Production-кластер NATS
+  local:
+    host: 'localhost:4222'
+    protocol: nats
+    description: Локальный NATS из docker-compose
+channels:
+  telemetryRecorded:
+    address: telemetry.recorded
+    title: Показания телеметрии
+    description: |
+      Показание, полученное от устройства. Событие публикует IoT Gateway,
+      а Telemetry Service сохраняет его во временном ряду.
+    messages:
+      TelemetryRecorded:
+        $ref: '#/components/messages/TelemetryRecorded'
+
+  deviceStateChanged:
+    address: device.state.changed
+    title: Изменение состояния устройства
+    description: |
+      Фактическое состояние устройства изменилось. Событие публикует
+      Device Service после подтверждения от IoT Gateway; на него подписаны
+      Notification Service и Automation Service.
+    messages:
+      DeviceStateChanged:
+        $ref: '#/components/messages/DeviceStateChanged'
+
+  deviceCommandRequested:
+    address: device.command.requested
+    title: Команда устройству
+    description: |
+      Команда для устройства поставлена в очередь. Событие публикует
+      Device Service, а IoT Gateway доставляет команду по протоколу устройства.
+    messages:
+      DeviceCommandRequested:
+        $ref: '#/components/messages/DeviceCommandRequested'
+
+operations:
+  receiveTelemetryRecorded:
+    action: receive
+    channel:
+      $ref: '#/channels/telemetryRecorded'
+    summary: Telemetry Service принимает показание устройства
+    description: |
+      Сервис телеметрии подписан на канал `telemetry.recorded` и сохраняет
+      показания в своём хранилище.
+    messages:
+      - $ref: '#/channels/telemetryRecorded/messages/TelemetryRecorded'
+    tags:
+      - name: telemetry
+
+  publishDeviceStateChanged:
+    action: send
+    channel:
+      $ref: '#/channels/deviceStateChanged'
+    summary: Device Service публикует изменение состояния
+    description: |
+      После подтверждения от IoT Gateway Device Service публикует новое
+      фактическое состояние. На событие подписаны Notification Service
+      и Automation Service.
+    messages:
+      - $ref: '#/channels/deviceStateChanged/messages/DeviceStateChanged'
+    tags:
+      - name: devices
+
+  receiveDeviceCommandRequested:
+    action: receive
+    channel:
+      $ref: '#/channels/deviceCommandRequested'
+    summary: IoT Gateway получает команду для устройства
+    description: |
+      IoT Gateway подписан на канал `device.command.requested` и доставляет
+      команду устройству по его протоколу.
+    messages:
+      - $ref: '#/channels/deviceCommandRequested/messages/DeviceCommandRequested'
+    tags:
+      - name: commands
+
+components:
+  messages:
+    TelemetryRecorded:
+      name: TelemetryRecorded
+      title: Показание телеметрии
+      summary: Одно измерение устройства с меткой времени.
+      contentType: application/json
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/TelemetryRecordedPayload'
+      examples:
+        - name: temperatureReading
+          summary: Температура в гостиной
+          headers:
+            eventId: 5a1c2e3f-4b5d-6e7f-8a9b-0c1d2e3f4a5b
+            eventType: telemetry.recorded
+            occurredAt: '2026-10-31T10:15:00Z'
+            traceId: 4f9c2a7e1b8d4c6a
+          payload:
+            deviceId: 0f5b7d0e-6d8a-4a7c-9f4e-1f1f4a7c9f4e
+            houseId: 7d3f1e2a-8b4c-4d5e-9f6a-2b3c4d5e6f70
+            metric: temperature
+            value: 22.5
+            unit: celsius
+            recordedAt: '2026-10-31T10:15:00Z'
+      tags:
+        - name: telemetry
+
+    DeviceStateChanged:
+      name: DeviceStateChanged
+      title: Состояние устройства изменилось
+      summary: Новое фактическое состояние устройства и источник изменения.
+      contentType: application/json
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/DeviceStateChangedPayload'
+      examples:
+        - name: lightTurnedOn
+          summary: Свет включён пользователем
+          headers:
+            eventId: 6b2d3f4a-5c6e-7f8a-9b0c-1d2e3f4a5b6c
+            eventType: device.state.changed
+            occurredAt: '2026-10-31T10:16:12Z'
+            traceId: 4f9c2a7e1b8d4c6a
+          payload:
+            deviceId: 0f5b7d0e-6d8a-4a7c-9f4e-1f1f4a7c9f4e
+            houseId: 7d3f1e2a-8b4c-4d5e-9f6a-2b3c4d5e6f70
+            capabilityCode: power
+            previousValue: 'off'
+            value: 'on'
+            source: user
+            changedAt: '2026-10-31T10:16:12Z'
+      tags:
+        - name: devices
+
+    DeviceCommandRequested:
+      name: DeviceCommandRequested
+      title: Команда устройству
+      summary: Запрос на выполнение команды, который доставляет IoT Gateway.
+      contentType: application/json
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/DeviceCommandRequestedPayload'
+      examples:
+        - name: setTargetTemperature
+          summary: Задать целевую температуру
+          headers:
+            eventId: 7c3e4a5b-6d7f-8a9b-0c1d-2e3f4a5b6c7d
+            eventType: device.command.requested
+            occurredAt: '2026-10-31T10:17:00Z'
+            traceId: 4f9c2a7e1b8d4c6a
+          payload:
+            commandId: 3c2a1b0d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+            deviceId: 0f5b7d0e-6d8a-4a7c-9f4e-1f1f4a7c9f4e
+            houseId: 7d3f1e2a-8b4c-4d5e-9f6a-2b3c4d5e6f70
+            capabilityCode: target_temperature
+            payload:
+              value: 23.0
+            requestedBy: 9e8d7c6b-5a4f-3e2d-1c0b-9a8f7e6d5c4b
+            expiresAt: '2026-10-31T10:17:30Z'
+      tags:
+        - name: commands
+
+  schemas:
+    EventHeaders:
+      type: object
+      required:
+        - eventId
+        - eventType
+        - occurredAt
+        - traceId
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор события для дедупликации.
+        eventType:
+          type: string
+          description: Тип события, совпадает с адресом канала.
+        occurredAt:
+          type: string
+          format: date-time
+          description: Время возникновения события.
+        traceId:
+          type: string
+          description: Идентификатор трассировки запроса.
+
+    TelemetryRecordedPayload:
+      type: object
+      required:
+        - deviceId
+        - houseId
+        - metric
+        - value
+        - unit
+        - recordedAt
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        metric:
+          type: string
+          example: temperature
+        value:
+          type: number
+          format: double
+          example: 22.5
+        unit:
+          type: string
+          example: celsius
+        recordedAt:
+          type: string
+          format: date-time
+          description: Время измерения на устройстве.
+
+    DeviceStateChangedPayload:
+      type: object
+      required:
+        - deviceId
+        - houseId
+        - capabilityCode
+        - value
+        - source
+        - changedAt
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        capabilityCode:
+          type: string
+          example: power
+        previousValue:
+          description: Предыдущее значение возможности, если известно.
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+          example: 'off'
+        value:
+          description: Новое значение возможности.
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+          example: 'on'
+        source:
+          type: string
+          enum:
+            - user
+            - automation
+            - device
+            - onboarding
+          description: Что инициировало изменение.
+        changedAt:
+          type: string
+          format: date-time
+
+    DeviceCommandRequestedPayload:
+      type: object
+      required:
+        - commandId
+        - deviceId
+        - houseId
+        - capabilityCode
+        - payload
+        - requestedBy
+        - expiresAt
+      properties:
+        commandId:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        capabilityCode:
+          type: string
+          example: target_temperature
+        payload:
+          type: object
+          additionalProperties: true
+          example:
+            value: 23.0
+        requestedBy:
+          type: string
+          format: uuid
+          description: Идентификатор пользователя или сценария.
+        expiresAt:
+          type: string
+          format: date-time
+          description: После этого времени команду можно не выполнять.

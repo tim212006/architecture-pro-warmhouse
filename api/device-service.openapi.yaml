@@ -1,0 +1,628 @@
+openapi: 3.0.3
+info:
+  title: Device Service API
+  version: 1.0.0
+  description: |
+    API сервиса устройств экосистемы «Тёплый дом».
+
+    Сервис отвечает за реестр устройств, их желаемое и фактическое состояние,
+    а также за постановку команд на выполнение. Синхронные вызовы идут через
+    API Gateway, а команды доставляются устройствам через IoT Gateway и брокер
+    событий NATS.
+
+    Все защищённые методы требуют JWT в заголовке `Authorization: Bearer <token>`.
+    Ошибки возвращаются в едином формате `Error`.
+  contact:
+    name: Warm House Architecture Team
+servers:
+  - url: https://api.warmhouse.example.com/api/v1
+    description: Production через API Gateway
+  - url: http://localhost:8082/api/v1
+    description: Локальный запуск device-service
+tags:
+  - name: Devices
+    description: Карточки устройств и их состояние
+  - name: Commands
+    description: Отправка команд устройствам
+security:
+  - bearerAuth: []
+paths:
+  /devices/{deviceId}:
+    get:
+      tags:
+        - Devices
+      operationId: getDevice
+      summary: Получить карточку устройства
+      description: Возвращает устройство, его возможности и текущее состояние.
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Устройство найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+              examples:
+                thermostat:
+                  summary: Термостат онлайн
+                  value:
+                    id: 0f5b7d0e-6d8a-4a7c-9f4e-1f1f4a7c9f4e
+                    houseId: 7d3f1e2a-8b4c-4d5e-9f6a-2b3c4d5e6f70
+                    typeId: 1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+                    name: Термостат в гостиной
+                    serialNumber: TH-000-0421
+                    status: online
+                    capabilities:
+                      - temperature
+                      - target_temperature
+                      - power
+                    desiredState:
+                      power: 'on'
+                      targetTemperature: 22.5
+                    reportedState:
+                      power: 'on'
+                      targetTemperature: 22.1
+                      temperature: 21.8
+                    lastSeenAt: '2026-10-31T10:15:00Z'
+                    createdAt: '2026-09-12T08:00:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /devices/{deviceId}/state:
+    patch:
+      tags:
+        - Devices
+      operationId: updateDeviceState
+      summary: Обновить желаемое состояние устройства
+      description: |
+        Сохраняет желаемое состояние и передаёт команду устройству.
+        Поле `version` обеспечивает оптимистичную блокировку: если состояние
+        уже изменилось, сервис вернёт `409 Conflict`.
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeviceStateRequest'
+            examples:
+              turnOnLight:
+                summary: Включить свет и задать яркость
+                value:
+                  version: 12
+                  state:
+                    power: 'on'
+                    brightness: 80
+      responses:
+        '200':
+          description: Состояние обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceStateResponse'
+              examples:
+                updated:
+                  summary: Новое состояние принято
+                  value:
+                    deviceId: 0f5b7d0e-6d8a-4a7c-9f4e-1f1f4a7c9f4e
+                    state:
+                      power: 'on'
+                      brightness: 80
+                    version: 13
+                    updatedAt: '2026-10-31T10:16:12Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /devices/{deviceId}/commands:
+    post:
+      tags:
+        - Commands
+      operationId: sendDeviceCommand
+      summary: Отправить команду устройству
+      description: |
+        Ставит команду в очередь. Метод идемпотентен при повторной отправке
+        с тем же `Idempotency-Key`: повторный запрос не создаёт новую команду.
+      parameters:
+        - $ref: '#/components/parameters/DeviceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendCommandRequest'
+            examples:
+              setTargetTemperature:
+                summary: Задать целевую температуру
+                value:
+                  capabilityCode: target_temperature
+                  payload:
+                    value: 23.0
+                  timeoutSeconds: 30
+      responses:
+        '202':
+          description: Команда принята в обработку
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Command'
+              examples:
+                accepted:
+                  summary: Команда создана
+                  value:
+                    id: 3c2a1b0d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
+                    deviceId: 0f5b7d0e-6d8a-4a7c-9f4e-1f1f4a7c9f4e
+                    capabilityCode: target_temperature
+                    payload:
+                      value: 23.0
+                    status: pending
+                    createdAt: '2026-10-31T10:17:00Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /houses/{houseId}/devices:
+    get:
+      tags:
+        - Devices
+      operationId: listHouseDevices
+      summary: Получить устройства дома
+      description: Возвращает постраничный список устройств с фильтрами по статусу и типу.
+      parameters:
+        - $ref: '#/components/parameters/HouseId'
+        - $ref: '#/components/parameters/StatusFilter'
+        - $ref: '#/components/parameters/TypeFilter'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Список устройств
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceList'
+              examples:
+                firstPage:
+                  summary: Первая страница списка
+                  value:
+                    items:
+                      - id: 0f5b7d0e-6d8a-4a7c-9f4e-1f1f4a7c9f4e
+                        houseId: 7d3f1e2a-8b4c-4d5e-9f6a-2b3c4d5e6f70
+                        typeId: 1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+                        name: Термостат в гостиной
+                        serialNumber: TH-000-0421
+                        status: online
+                        capabilities:
+                          - temperature
+                          - target_temperature
+                        desiredState:
+                          targetTemperature: 22.5
+                        reportedState:
+                          temperature: 21.8
+                        lastSeenAt: '2026-10-31T10:15:00Z'
+                        createdAt: '2026-09-12T08:00:00Z'
+                    total: 1
+                    limit: 20
+                    offset: 0
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT пользователя, выданный Access Service.
+
+  parameters:
+    DeviceId:
+      name: deviceId
+      in: path
+      required: true
+      description: Идентификатор устройства.
+      schema:
+        type: string
+        format: uuid
+        example: 0f5b7d0e-6d8a-4a7c-9f4e-1f1f4a7c9f4e
+    HouseId:
+      name: houseId
+      in: path
+      required: true
+      description: Идентификатор дома.
+      schema:
+        type: string
+        format: uuid
+        example: 7d3f1e2a-8b4c-4d5e-9f6a-2b3c4d5e6f70
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Уникальный ключ запроса для защиты от повторной отправки команды.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+        example: cmd-2026-10-31-0001
+    StatusFilter:
+      name: status
+      in: query
+      required: false
+      description: Фильтр по статусу устройства.
+      schema:
+        type: string
+        enum:
+          - online
+          - offline
+          - maintenance
+    TypeFilter:
+      name: typeId
+      in: query
+      required: false
+      description: Фильтр по типу устройства.
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Размер страницы.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Смещение от начала списка.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+  schemas:
+    Device:
+      type: object
+      required:
+        - id
+        - houseId
+        - typeId
+        - name
+        - status
+        - capabilities
+        - desiredState
+        - reportedState
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        typeId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Термостат в гостиной
+        serialNumber:
+          type: string
+          example: TH-000-0421
+        status:
+          type: string
+          enum:
+            - online
+            - offline
+            - maintenance
+          example: online
+        capabilities:
+          type: array
+          description: Коды возможностей, доступных у устройства.
+          items:
+            type: string
+          example:
+            - temperature
+            - target_temperature
+            - power
+        desiredState:
+          $ref: '#/components/schemas/DeviceState'
+        reportedState:
+          $ref: '#/components/schemas/DeviceState'
+        lastSeenAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-10-31T10:15:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-09-12T08:00:00Z'
+
+    DeviceState:
+      type: object
+      description: |
+        Набор пар «возможность — значение». Состав зависит от типа устройства,
+        поэтому схема открыта для дополнительных свойств.
+      additionalProperties: true
+      example:
+        power: 'on'
+        targetTemperature: 22.5
+
+    UpdateDeviceStateRequest:
+      type: object
+      required:
+        - state
+        - version
+      properties:
+        state:
+          $ref: '#/components/schemas/DeviceState'
+        version:
+          type: integer
+          minimum: 1
+          description: Текущая версия состояния для оптимистичной блокировки.
+          example: 12
+
+    DeviceStateResponse:
+      type: object
+      required:
+        - deviceId
+        - state
+        - version
+        - updatedAt
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        state:
+          $ref: '#/components/schemas/DeviceState'
+        version:
+          type: integer
+          example: 13
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-31T10:16:12Z'
+
+    SendCommandRequest:
+      type: object
+      required:
+        - capabilityCode
+        - payload
+      properties:
+        capabilityCode:
+          type: string
+          description: Код возможности, которой управляет команда.
+          example: target_temperature
+        payload:
+          type: object
+          additionalProperties: true
+          example:
+            value: 23.0
+        timeoutSeconds:
+          type: integer
+          minimum: 1
+          maximum: 300
+          default: 30
+          description: Сколько секунд ждать подтверждения от устройства.
+
+    Command:
+      type: object
+      required:
+        - id
+        - deviceId
+        - capabilityCode
+        - payload
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        capabilityCode:
+          type: string
+          example: target_temperature
+        payload:
+          type: object
+          additionalProperties: true
+          example:
+            value: 23.0
+        status:
+          type: string
+          enum:
+            - pending
+            - sent
+            - acknowledged
+            - failed
+          example: pending
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-31T10:17:00Z'
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    DeviceList:
+      type: object
+      required:
+        - items
+        - total
+        - limit
+        - offset
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+        total:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        offset:
+          type: integer
+          example: 0
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Машиночитаемый код ошибки.
+          example: DEVICE_NOT_FOUND
+        message:
+          type: string
+          description: Понятное человеку описание.
+          example: Устройство не найдено
+        details:
+          type: object
+          additionalProperties: true
+          description: Дополнительный контекст ошибки.
+        traceId:
+          type: string
+          description: Идентификатор запроса для поиска в логах.
+          example: 4f9c2a7e1b8d4c6a
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            invalidUuid:
+              value:
+                code: INVALID_ARGUMENT
+                message: 'deviceId должен быть UUID'
+                traceId: 4f9c2a7e1b8d4c6a
+    Unauthorized:
+      description: Пользователь не аутентифицирован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            unauthorized:
+              value:
+                code: UNAUTHORIZED
+                message: Требуется действительный JWT
+                traceId: 4f9c2a7e1b8d4c6a
+    Forbidden:
+      description: Нет доступа к дому или устройству
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            forbidden:
+              value:
+                code: FORBIDDEN
+                message: Нет доступа к устройству
+                traceId: 4f9c2a7e1b8d4c6a
+    NotFound:
+      description: Устройство или дом не найдены
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            deviceNotFound:
+              value:
+                code: DEVICE_NOT_FOUND
+                message: Устройство не найдено
+                traceId: 4f9c2a7e1b8d4c6a
+    Conflict:
+      description: Конфликт версии состояния или повторная команда
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            versionConflict:
+              value:
+                code: STATE_VERSION_CONFLICT
+                message: Состояние уже изменено, обновите устройство и повторите запрос
+                details:
+                  currentVersion: 13
+                traceId: 4f9c2a7e1b8d4c6a
+    UnprocessableEntity:
+      description: Значение не поддерживается возможностями устройства
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            unsupportedCapability:
+              value:
+                code: UNSUPPORTED_CAPABILITY
+                message: Устройство не поддерживает capability code
+                details:
+                  capabilityCode: target_temperature
+                  supported:
+                    - temperature
+                    - power
+                traceId: 4f9c2a7e1b8d4c6a
+    InternalServerError:
+      description: Внутренняя ошибка сервиса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            internal:
+              value:
+                code: INTERNAL_ERROR
+                message: Внутренняя ошибка сервиса
+                traceId: 4f9c2a7e1b8d4c6a

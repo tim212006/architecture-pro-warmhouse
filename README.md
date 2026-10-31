@@ -92,10 +92,10 @@
 
 **Ответ.** Диаграмма контекста As-Is показывает монолит, владельца дома, сервисного инженера, модуль отопления и датчик температуры. Все обращения к устройствам инициирует сервер.
 
-- [Исходник PlantUML](schemas/c4/context-as-is.puml)
-- [SVG-версия](schemas/c4/context-as-is.svg)
+- [[context-as-is.puml|Исходник PlantUML]]
+- [[context-as-is.svg|SVG-версия]]
 
-![Контекстная диаграмма C4 As-Is](schemas/c4/context-as-is.png)
+![[context-as-is.png|Контекстная диаграмма C4 As-Is]]
 
 # Задание 2. Проектирование микросервисной архитектуры
 
@@ -112,10 +112,10 @@
 
 Целевая экосистема как единая SaaS-платформа: пользователь, поддержка, устройства партнёров, камеры, провайдер уведомлений и платёжный провайдер.
 
-- [Исходник PlantUML](schemas/c4/context-to-be.puml)
-- [SVG-версия](schemas/c4/context-to-be.svg)
+- [[context-to-be.puml|Исходник PlantUML]]
+- [[context-to-be.svg|SVG-версия]]
 
-![Контекстная диаграмма C4 To-Be](schemas/c4/context-to-be.png)
+![[context-to-be.png|Контекстная диаграмма C4 To-Be]]
 
 **Диаграмма контейнеров (Containers)**
 
@@ -123,10 +123,10 @@
 
 Диаграмма показывает целевую платформу: веб-клиент, API Gateway, семь микросервисов, IoT Gateway для устройств, брокер событий и отдельные хранилища данных.
 
-- [Исходник PlantUML](schemas/c4/container-to-be.puml)
-- [SVG-версия](schemas/c4/container-to-be.svg)
+- [[container-to-be.puml|Исходник PlantUML]]
+- [[container-to-be.svg|SVG-версия]]
 
-![Диаграмма контейнеров C4 To-Be](schemas/c4/container-to-be.png)
+![[container-to-be.png|Диаграмма контейнеров C4 To-Be]]
 
 Ключевые решения:
 
@@ -142,52 +142,52 @@
 
 **Device Service**
 
-- [Исходник PlantUML](schemas/c4/component-device-service.puml)
-- [SVG-версия](schemas/c4/component-device-service.svg)
+- [[component-device-service.puml|Исходник PlantUML]]
+- [[component-device-service.svg|SVG-версия]]
 
-![Компоненты Device Service](schemas/c4/component-device-service.png)
+![[component-device-service.png|Компоненты Device Service]]
 
 **Telemetry Service**
 
-- [Исходник PlantUML](schemas/c4/component-telemetry-service.puml)
-- [SVG-версия](schemas/c4/component-telemetry-service.svg)
+- [[component-telemetry-service.puml|Исходник PlantUML]]
+- [[component-telemetry-service.svg|SVG-версия]]
 
-![Компоненты Telemetry Service](schemas/c4/component-telemetry-service.png)
+![[component-telemetry-service.png|Компоненты Telemetry Service]]
 
 **Automation Service**
 
-- [Исходник PlantUML](schemas/c4/component-automation-service.puml)
-- [SVG-версия](schemas/c4/component-automation-service.svg)
+- [[component-automation-service.puml|Исходник PlantUML]]
+- [[component-automation-service.svg|SVG-версия]]
 
-![Компоненты Automation Service](schemas/c4/component-automation-service.png)
+![[component-automation-service.png|Компоненты Automation Service]]
 
 **Access Service**
 
-- [Исходник PlantUML](schemas/c4/component-access-service.puml)
-- [SVG-версия](schemas/c4/component-access-service.svg)
+- [[component-access-service.puml|Исходник PlantUML]]
+- [[component-access-service.svg|SVG-версия]]
 
-![Компоненты Access Service](schemas/c4/component-access-service.png)
+![[component-access-service.png|Компоненты Access Service]]
 
 **Onboarding Service**
 
-- [Исходник PlantUML](schemas/c4/component-onboarding-service.puml)
-- [SVG-версия](schemas/c4/component-onboarding-service.svg)
+- [[component-onboarding-service.puml|Исходник PlantUML]]
+- [[component-onboarding-service.svg|SVG-версия]]
 
-![Компоненты Onboarding Service](schemas/c4/component-onboarding-service.png)
+![[component-onboarding-service.png|Компоненты Onboarding Service]]
 
 **Notification Service**
 
-- [Исходник PlantUML](schemas/c4/component-notification-service.puml)
-- [SVG-версия](schemas/c4/component-notification-service.svg)
+- [[component-notification-service.puml|Исходник PlantUML]]
+- [[component-notification-service.svg|SVG-версия]]
 
-![Компоненты Notification Service](schemas/c4/component-notification-service.png)
+![[component-notification-service.png|Компоненты Notification Service]]
 
 **Media Service**
 
-- [Исходник PlantUML](schemas/c4/component-media-service.puml)
-- [SVG-версия](schemas/c4/component-media-service.svg)
+- [[component-media-service.puml|Исходник PlantUML]]
+- [[component-media-service.svg|SVG-версия]]
 
-![Компоненты Media Service](schemas/c4/component-media-service.png)
+![[component-media-service.png|Компоненты Media Service]]
 
 **Диаграмма кода (Code)**
 
@@ -195,17 +195,17 @@
 
 **Модель агрегата Device**
 
-- [Исходник PlantUML](schemas/c4/code-device-class.puml)
-- [SVG-версия](schemas/c4/code-device-class.svg)
+- [[code-device-class.puml|Исходник PlantUML]]
+- [[code-device-class.svg|SVG-версия]]
 
-![Классы Device Service](schemas/c4/code-device-class.png)
+![[code-device-class.png|Классы Device Service]]
 
 **Последовательность отправки команды устройству**
 
-- [Исходник PlantUML](schemas/c4/code-command-sequence.puml)
-- [SVG-версия](schemas/c4/code-command-sequence.svg)
+- [[code-command-sequence.puml|Исходник PlantUML]]
+- [[code-command-sequence.svg|SVG-версия]]
 
-![Последовательность команды устройству](schemas/c4/code-command-sequence.png)
+![[code-command-sequence.png|Последовательность команды устройству]]
 
 # Задание 3. Разработка ER-диаграммы
 
@@ -215,40 +215,40 @@
 
 **Общая ER-диаграмма — все сущности**
 
-- [Исходник PlantUML](schemas/er/er-full.puml)
-- [SVG-версия](schemas/er/er-full.svg)
+- [[er-full.puml|Исходник PlantUML]]
+- [[er-full.svg|SVG-версия]]
 
-![Общая ER-диаграмма экосистемы «Тёплый дом»](schemas/er/er-full.png)
+![[er-full.png|Общая ER-диаграмма экосистемы «Тёплый дом»]]
 
 **Обзорная ER-диаграмма**
 
-- [Исходник PlantUML](schemas/er/er-overview.puml)
-- [SVG-версия](schemas/er/er-overview.svg)
+- [[er-overview.puml|Исходник PlantUML]]
+- [[er-overview.svg|SVG-версия]]
 
-![Обзорная ER-диаграмма экосистемы «Тёплый дом»](schemas/er/er-overview.png)
+![[er-overview.png|Обзорная ER-диаграмма экосистемы «Тёплый дом»]]
 
 На обзорной схеме намеренно нет `module_device_types`, `commands`, `scenario_actions` и `device_claims`: они раскрыты ниже и не перегружают восприятие.
 
 **Детальная ER: Access Service и Onboarding Service**
 
-- [Исходник PlantUML](schemas/er/er-access-onboarding.puml)
-- [SVG-версия](schemas/er/er-access-onboarding.svg)
+- [[er-access-onboarding.puml|Исходник PlantUML]]
+- [[er-access-onboarding.svg|SVG-версия]]
 
-![ER Access Service и Onboarding Service](schemas/er/er-access-onboarding.png)
+![[er-access-onboarding.png|ER Access Service и Onboarding Service]]
 
 **Детальная ER: Device Service**
 
-- [Исходник PlantUML](schemas/er/er-device.puml)
-- [SVG-версия](schemas/er/er-device.svg)
+- [[er-device.puml|Исходник PlantUML]]
+- [[er-device.svg|SVG-версия]]
 
-![ER Device Service](schemas/er/er-device.png)
+![[er-device.png|ER Device Service]]
 
 **Детальная ER: Telemetry Service и Automation Service**
 
-- [Исходник PlantUML](schemas/er/er-telemetry-automation.puml)
-- [SVG-версия](schemas/er/er-telemetry-automation.svg)
+- [[er-telemetry-automation.puml|Исходник PlantUML]]
+- [[er-telemetry-automation.svg|SVG-версия]]
 
-![ER Telemetry Service и Automation Service](schemas/er/er-telemetry-automation.png)
+![[er-telemetry-automation.png|ER Telemetry Service и Automation Service]]
 
 **Владение сущностями:**
 
@@ -281,9 +281,51 @@
 
 Укажите, какой тип API вы будете использовать для взаимодействия микросервисов. Объясните своё решение.
 
+**Ответ.** Использую два типа контрактов:
+
+- **REST + OpenAPI 3.0.3** — для синхронных операций, где клиенту нужен немедленный ответ: карточка устройства, чтение телеметрии, изменение состояния и отправка команды.
+- **AsyncAPI 3.1.0** — для событий: приём телеметрии, изменение состояния устройства и доставка команд через брокер NATS.
+
+REST выбран для синхронных сценариев, потому что он прост для клиентов, хорошо кэшируется. События вынесены в AsyncAPI, потому что телеметрия и команды имеют множественных потребителей, должны переживать недоступность сервиса и не требуют блокирующего ответа. Такой гибридный подход разделяет ответственность: REST описывает «что я хочу сделать сейчас», а события — «что уже произошло» и «что нужно доставить асинхронно».
+
 ### 2. Документация API
 
 Здесь приложите ссылки на документацию API для микросервисов, которые вы спроектировали в первой части проектной работы. Для документирования используйте Swagger/OpenAPI или AsyncAPI.
+
+**Ответ.** Спецификации лежат в каталоге [`api/`](api/):
+
+- [[device-service.openapi.yaml|Device Service — OpenAPI]]
+- [[telemetry-service.openapi.yaml|Telemetry Service — OpenAPI]]
+- [[asyncapi.yaml|События платформы — AsyncAPI]]
+
+Спецификации можно открыть в [Swagger Editor](https://forge.etsi.org/swagger/editor/) и [AsyncAPI Studio](https://studio.asyncapi.com/), вставив содержимое файла. Для каждого метода и события описаны запрос, ответ, коды ошибок и примеры.
+
+**Синхронные эндпоинты:**
+
+| Метод | Путь | Сервис | Назначение | Успех | Основные ошибки |
+|---|---|---|---|---|---|
+| `GET` | `/api/v1/devices/{deviceId}` | Device Service | Карточка устройства, возможности и состояние | `200` | `401`, `403`, `404`, `500` |
+| `PATCH` | `/api/v1/devices/{deviceId}/state` | Device Service | Обновить желаемое состояние с оптимистичной блокировкой | `200` | `400`, `401`, `403`, `404`, `409`, `422`, `500` |
+| `POST` | `/api/v1/devices/{deviceId}/commands` | Device Service | Поставить команду устройству в очередь | `202` | `400`, `401`, `403`, `404`, `409`, `422`, `500` |
+| `GET` | `/api/v1/houses/{houseId}/devices` | Device Service | Постраничный список устройств дома | `200` | `400`, `401`, `403`, `404`, `500` |
+| `GET` | `/api/v1/houses/{houseId}/telemetry` | Telemetry Service | Временные ряды телеметрии с фильтрами и агрегацией | `200` | `400`, `401`, `403`, `404`, `500` |
+
+**Асинхронные события:**
+
+| Событие | Издатель | Потребители | Назначение |
+|---|---|---|---|
+| `telemetry.recorded` | IoT Gateway | Telemetry Service | Сохранение показания устройства |
+| `device.state.changed` | Device Service | Notification Service, Automation Service | Реакция на новое фактическое состояние |
+| `device.command.requested` | Device Service | IoT Gateway | Доставка команды на устройство |
+
+**Общие правила контрактов:**
+
+- Аутентификация — JWT в заголовке `Authorization: Bearer <token>`; права проверяются по дому и роли пользователя.
+- Ошибки — единый формат `Error` с полями `code`, `message`, `details`, `traceId`.
+- `POST /commands` идемпотентен по заголовку `Idempotency-Key`, чтобы повтор запроса не создавал дубль команды.
+- `PATCH /state` принимает `version` и возвращает `409`, если состояние уже изменилось.
+- Списки используют `limit` и `offset`; телеметрия ограничивает число точек параметром `limit`.
+- В AsyncAPI у каждого события есть `eventId` для дедупликации, `eventType`, `occurredAt` и `traceId`.
 
 # Задание 5. Работа с docker и docker-compose
 
