@@ -1,0 +1,25 @@
+@startuml
+!include <C4/C4_Component>
+
+title Компоненты Media Service
+
+Container_Ext(apiGateway, "API Gateway", "Kong / NGINX", "Маршрутизация запросов")
+Container_Ext(iotGateway, "IoT Gateway", "RTSP/WebRTC", "Доступ к камерам")
+ContainerDb_Ext(mediaStorage, "media-storage", "S3 / MinIO", "Записи и архив видео")
+
+Container_Boundary(mediaService, "Media Service") {
+  Component(streamApi, "Stream API", "REST", "Сессии просмотра и права доступа")
+  Component(webrtcProxy, "WebRTC / RTSP Proxy", "Go", "Проксирование видеопотока")
+  Component(recordingWorker, "Recording Worker", "Go", "Запись по расписанию и событию")
+  Component(storageClient, "Object Storage Client", "Go", "Сохранение и выдача записей")
+}
+
+Rel(apiGateway, streamApi, "Запрос на просмотр", "REST/WebSocket")
+Rel(streamApi, webrtcProxy, "Создаёт сессию", "вызов")
+Rel(webrtcProxy, iotGateway, "Запрашивает поток камеры", "RTSP/WebRTC")
+Rel(iotGateway, webrtcProxy, "Передаёт видеопоток", "WebRTC")
+Rel(recordingWorker, webrtcProxy, "Забирает поток для записи", "WebRTC")
+Rel(recordingWorker, storageClient, "Передаёт запись", "вызов")
+Rel(storageClient, mediaStorage, "S3 API", "HTTPS")
+
+@enduml

@@ -1,0 +1,38 @@
+@startuml
+title Сценарий команды устройству — последовательность вызовов (уровень кода)
+
+autonumber
+
+actor "Владелец дома" as Owner
+participant "Веб-приложение" as Web
+participant "API Gateway" as Gateway
+participant "Access Service" as Access
+participant "Device Service API" as DeviceApi
+participant "Command Handler" as Handler
+participant "State Manager" as State
+participant "Device Event Consumer" as DeviceEvents
+participant "Брокер событий" as Broker
+participant "IoT Gateway" as IoT
+participant "Устройство" as Thing
+
+Owner -> Web : Включить свет в гостиной
+Web -> Gateway : POST /api/v1/devices/{id}/commands
+Gateway -> Access : Проверить токен и права на дом
+Access --> Gateway : Доступ разрешён
+Gateway -> DeviceApi : Передать команду
+DeviceApi -> Handler : validateCommand()
+Handler -> State : Сохранить desired state
+State --> Handler : Состояние сохранено
+Handler -> Broker : device.command
+Broker -> IoT : Доставить команду
+IoT -> Thing : MQTT-команда
+Thing --> IoT : ACK и новое состояние
+IoT -> Broker : device.state.changed
+Broker -> DeviceEvents : device.state.changed
+DeviceEvents -> State : applyReportedState()
+State --> DeviceEvents : Состояние обновлено
+Broker -> Gateway : state.changed (WebSocket)
+Gateway --> Web : state.changed
+Web --> Owner : Устройство включено
+
+@enduml

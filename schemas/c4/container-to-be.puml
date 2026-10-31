@@ -1,0 +1,77 @@
+@startuml
+!include <C4/C4_Container>
+
+title Диаграмма контейнеров C4 — целевая платформа «Тёплый дом» (To-Be)
+
+Person(owner, "Владелец дома", "Управляет устройствами, сценариями, смотрит телеметрию и видео")
+Person(support, "Сотрудник поддержки", "Помогает пользователям, диагностирует подключение и состояние устройств")
+
+System_Boundary(platform, "Платформа умного дома «Тёплый дом»") {
+
+  Container(webApp, "Веб-приложение", "React, TypeScript, PWA", "Личный кабинет: дома, устройства, сценарии, телеметрия и видео")
+
+  Container(apiGateway, "API Gateway", "Kong / NGINX, JWT", "TLS, маршрутизация, проверка токенов, rate limiting")
+
+  Container_Boundary(services, "Микросервисы") {
+    Container(accessService, "Access Service", "Go, REST/gRPC", "Пользователи, дома, членство и права доступа")
+    Container(deviceService, "Device Service", "Go, REST/gRPC", "Реестр устройств и типов, состояние, команды отопления, света, ворот и будущих модулей")
+    Container(telemetryService, "Telemetry Service", "Go, REST/gRPC", "Приём, хранение, агрегация и выдача показаний датчиков")
+    Container(automationService, "Automation Service", "Go, REST/gRPC", "Сценарии, правила, расписания и действия над устройствами")
+    Container(onboardingService, "Onboarding Service", "Go, REST", "Самостоятельное подключение, QR-привязка и адаптация партнёрских протоколов")
+    Container(notificationService, "Notification Service", "Go, worker", "Подписка на события и отправка уведомлений")
+    Container(mediaService, "Media Service", "Go, WebRTC/RTSP", "Видеопотоки с камер, записи и удалённое наблюдение")
+  }
+
+  Container(iotGateway, "IoT Gateway", "MQTT broker, TLS, адаптеры протоколов", "Подключение устройств, приём телеметрии, доставка команд, трансляция MQTT/Zigbee/Z-Wave/Matter")
+  ContainerQueue(eventBroker, "Брокер событий", "NATS JetStream", "Асинхронные события телеметрии, состояния устройств, команд и уведомлений")
+
+  Container_Boundary(data, "Хранилища данных") {
+    ContainerDb(accessDB, "access-db", "PostgreSQL", "Пользователи, дома, членство")
+    ContainerDb(deviceDB, "device-db", "PostgreSQL", "Устройства, типы, возможности, состояние")
+    ContainerDb(telemetryDB, "telemetry-db", "TimescaleDB или ClickHouse", "Временные ряды показаний и агрегаты")
+    ContainerDb(automationDB, "automation-db", "PostgreSQL", "Сценарии, правила, расписания")
+    ContainerDb(onboardingDB, "onboarding-db", "PostgreSQL", "Заявки на подключение и привязки")
+    ContainerDb(mediaStorage, "media-storage", "S3 / MinIO", "Записи камер и архив видео")
+  }
+}
+
+System_Ext(devices, "Устройства партнёров", "Модули отопления, света, ворот, датчики температуры и другие устройства")
+System_Ext(cameras, "Камеры и видеодомофоны", "Партнёрские камеры с RTSP/WebRTC-потоками")
+System_Ext(pushProvider, "Провайдер уведомлений", "Email, SMS и push-сообщения")
+
+Rel(owner, webApp, "Управляет домом и устройствами", "HTTPS")
+Rel(support, webApp, "Диагностирует и помогает", "HTTPS")
+Rel(webApp, apiGateway, "Запросы к API и видеопотоки", "HTTPS, JSON, WebSocket")
+Rel(apiGateway, accessService, "Аутентификация и профиль", "REST/gRPC")
+Rel(apiGateway, deviceService, "Устройства и команды", "REST/gRPC")
+Rel(apiGateway, telemetryService, "Текущие и исторические показания", "REST/gRPC")
+Rel(apiGateway, automationService, "Сценарии и расписания", "REST/gRPC")
+Rel(apiGateway, onboardingService, "Подключение новых устройств", "REST")
+Rel(apiGateway, mediaService, "Видеопотоки и записи", "WebRTC/HTTPS")
+
+Rel(accessService, accessDB, "Читает и пишет", "SQL")
+Rel(deviceService, deviceDB, "Читает и пишет", "SQL")
+Rel(telemetryService, telemetryDB, "Пишет показания и читает агрегаты", "SQL")
+Rel(automationService, automationDB, "Читает и пишет", "SQL")
+Rel(onboardingService, onboardingDB, "Читает и пишет", "SQL")
+Rel(mediaService, mediaStorage, "Сохраняет записи", "S3 API")
+
+Rel(deviceService, eventBroker, "Публикует события состояния и команды", "NATS")
+Rel(iotGateway, eventBroker, "Публикует телеметрию и результаты команд", "NATS")
+Rel(eventBroker, iotGateway, "Доставляет команды устройствам", "NATS")
+Rel(telemetryService, eventBroker, "Подписывается на телеметрию", "NATS")
+Rel(automationService, eventBroker, "Подписывается на события, публикует команды", "NATS")
+Rel(notificationService, eventBroker, "Подписывается на события", "NATS")
+Rel(onboardingService, eventBroker, "Публикует события подключения", "NATS")
+
+Rel(onboardingService, deviceService, "Регистрирует устройство", "REST/gRPC")
+Rel(notificationService, pushProvider, "Отправляет уведомления", "SMTP/API")
+
+Rel(devices, iotGateway, "Публикует телеметрию и состояние", "MQTT/TLS")
+Rel(iotGateway, devices, "Доставляет команды", "MQTT/TLS")
+Rel(mediaService, iotGateway, "Запрашивает видеопоток", "RTSP/WebRTC")
+Rel(iotGateway, mediaService, "Проксирует видеопоток", "WebRTC")
+Rel(cameras, iotGateway, "Отдаёт видеопоток", "RTSP")
+Rel(iotGateway, cameras, "Запрашивает поток и настройки", "RTSP")
+
+@enduml

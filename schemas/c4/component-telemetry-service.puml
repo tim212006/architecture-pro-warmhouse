@@ -1,0 +1,26 @@
+@startuml
+!include <C4/C4_Component>
+
+title Компоненты Telemetry Service
+
+Container_Ext(apiGateway, "API Gateway", "Kong / NGINX", "Маршрутизация запросов")
+ContainerQueue_Ext(eventBroker, "Брокер событий", "NATS JetStream", "Асинхронные события")
+ContainerDb_Ext(telemetryDB, "telemetry-db", "TimescaleDB или Clickhouse", "Временные ряды и агрегаты")
+
+Container_Boundary(telemetryService, "Telemetry Service") {
+  Component(queryApi, "Query API", "REST/gRPC", "Текущие и исторические показания")
+  Component(consumer, "Telemetry Consumer", "Go", "Подписка на события телеметрии")
+  Component(validator, "Validator & Normalizer", "Go", "Проверка и приведение измерений")
+  Component(aggregator, "Aggregation & Retention Worker", "Go", "Агрегаты и очистка старых данных")
+  ComponentDb(repository, "Telemetry Repository", "TimescaleDB или Clickhouse", "Доступ к временным рядам")
+}
+
+Rel(apiGateway, queryApi, "Запросы показаний", "REST/gRPC")
+Rel(eventBroker, consumer, "События telemetry.recorded", "NATS")
+Rel(consumer, validator, "Передаёт измерение", "вызов")
+Rel(validator, repository, "Сохраняет измерение", "вызов")
+Rel(queryApi, repository, "Читает показания и агрегаты", "вызов")
+Rel(aggregator, repository, "Строит агрегаты и удаляет устаревшие данные", "вызов")
+Rel(repository, telemetryDB, "SQL", "driver")
+
+@enduml

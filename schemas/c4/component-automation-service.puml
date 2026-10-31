@@ -1,0 +1,29 @@
+@startuml
+!include <C4/C4_Component>
+
+title Компоненты Automation Service
+
+Container_Ext(apiGateway, "API Gateway", "Kong / NGINX", "Маршрутизация запросов")
+ContainerQueue_Ext(eventBroker, "Брокер событий", "NATS JetStream", "События и команды")
+ContainerDb_Ext(automationDB, "automation-db", "PostgreSQL", "Сценарии и расписания")
+
+Container_Boundary(automationService, "Automation Service") {
+  Component(scenarioApi, "Scenario API", "REST/gRPC", "CRUD сценариев и расписаний")
+  Component(eventConsumer, "Event Consumer", "Go", "Подписка на события устройств и телеметрии")
+  Component(rulesEngine, "Rules Engine", "Go", "Вычисление условий и выбор действий")
+  Component(scheduler, "Scheduler", "Go", "Запуск сценариев по времени")
+  Component(actionDispatcher, "Action Dispatcher", "Go", "Публикация команд устройствам")
+  ComponentDb(repository, "Scenario Repository", "PostgreSQL", "Сценарии, правила и расписания")
+}
+
+Rel(apiGateway, scenarioApi, "Управление сценариями", "REST/gRPC")
+Rel(eventBroker, eventConsumer, "События телеметрии и состояния", "NATS")
+Rel(eventConsumer, rulesEngine, "Передаёт событие", "вызов")
+Rel(scheduler, rulesEngine, "Запускает сценарий по расписанию", "вызов")
+Rel(rulesEngine, repository, "Загружает и сохраняет сценарии", "вызов")
+Rel(scenarioApi, repository, "Читает и пишет", "вызов")
+Rel(rulesEngine, actionDispatcher, "Передаёт действие", "вызов")
+Rel(actionDispatcher, eventBroker, "Публикует device.command", "NATS")
+Rel(repository, automationDB, "SQL", "driver")
+
+@enduml

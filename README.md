@@ -101,17 +101,111 @@
 
 В этом задании вам нужно предоставить только диаграммы в модели C4. Мы не просим вас отдельно описывать получившиеся микросервисы и то, как вы определили взаимодействия между компонентами To-Be системы. Если вы правильно подготовите диаграммы C4, они и так это покажут.
 
+**Иерархия диаграмм**
+
+- Уровень 1 — контекст: As-Is в Задании 1, To-Be ниже.
+- Уровень 2 — контейнеры: одна диаграмма на систему, показывающая все контейнеры и их взаимодействие.
+- Уровень 3 — компоненты: по одной диаграмме на каждый контейнер-микросервис.
+- Уровень 4 — код: для критичного компонента Device Service.
+
+**Контекст To-Be (уровень 1)**
+
+Целевая экосистема как единая SaaS-платформа: пользователь, поддержка, устройства партнёров, камеры, провайдер уведомлений и платёжный провайдер.
+
+- [Исходник PlantUML](schemas/c4/context-to-be.puml)
+- [SVG-версия](schemas/c4/context-to-be.svg)
+
+![Контекстная диаграмма C4 To-Be](schemas/c4/context-to-be.png)
+
 **Диаграмма контейнеров (Containers)**
 
 Добавьте диаграмму.
+
+Диаграмма показывает целевую платформу: веб-клиент, API Gateway, семь микросервисов, IoT Gateway для устройств, брокер событий и отдельные хранилища данных.
+
+- [Исходник PlantUML](schemas/c4/container-to-be.puml)
+- [SVG-версия](schemas/c4/container-to-be.svg)
+
+![Диаграмма контейнеров C4 To-Be](schemas/c4/container-to-be.png)
+
+Ключевые решения:
+
+- Устройства подключаются к IoT Gateway по MQTT и сами инициируют соединение, поэтому NAT и нестабильная связь не блокируют телеметрию.
+- Отопление, свет, ворота и будущие модули обслуживает один Device Service с моделью типов и возможностей устройства; отдельный сервис на каждый тип устройства не создаётся.
+- Видеонаблюдение вынесено в Media Service из-за bandwidth, WebRTC и отдельного хранилища записей.
+- Синхронные запросы идут через API Gateway, а телеметрия, команды, события состояния и уведомления передаются асинхронно через брокер.
+- У каждого сервиса своя база данных, поэтому схема и релизный цикл не связаны с соседними сервисами.
 
 **Диаграмма компонентов (Components)**
 
 Добавьте диаграмму для каждого из выделенных микросервисов.
 
+**Device Service**
+
+- [Исходник PlantUML](schemas/c4/component-device-service.puml)
+- [SVG-версия](schemas/c4/component-device-service.svg)
+
+![Компоненты Device Service](schemas/c4/component-device-service.png)
+
+**Telemetry Service**
+
+- [Исходник PlantUML](schemas/c4/component-telemetry-service.puml)
+- [SVG-версия](schemas/c4/component-telemetry-service.svg)
+
+![Компоненты Telemetry Service](schemas/c4/component-telemetry-service.png)
+
+**Automation Service**
+
+- [Исходник PlantUML](schemas/c4/component-automation-service.puml)
+- [SVG-версия](schemas/c4/component-automation-service.svg)
+
+![Компоненты Automation Service](schemas/c4/component-automation-service.png)
+
+**Access Service**
+
+- [Исходник PlantUML](schemas/c4/component-access-service.puml)
+- [SVG-версия](schemas/c4/component-access-service.svg)
+
+![Компоненты Access Service](schemas/c4/component-access-service.png)
+
+**Onboarding Service**
+
+- [Исходник PlantUML](schemas/c4/component-onboarding-service.puml)
+- [SVG-версия](schemas/c4/component-onboarding-service.svg)
+
+![Компоненты Onboarding Service](schemas/c4/component-onboarding-service.png)
+
+**Notification Service**
+
+- [Исходник PlantUML](schemas/c4/component-notification-service.puml)
+- [SVG-версия](schemas/c4/component-notification-service.svg)
+
+![Компоненты Notification Service](schemas/c4/component-notification-service.png)
+
+**Media Service**
+
+- [Исходник PlantUML](schemas/c4/component-media-service.puml)
+- [SVG-версия](schemas/c4/component-media-service.svg)
+
+![Компоненты Media Service](schemas/c4/component-media-service.png)
+
 **Диаграмма кода (Code)**
 
 Добавьте одну диаграмму или несколько.
+
+**Модель агрегата Device**
+
+- [Исходник PlantUML](schemas/c4/code-device-class.puml)
+- [SVG-версия](schemas/c4/code-device-class.svg)
+
+![Классы Device Service](schemas/c4/code-device-class.png)
+
+**Последовательность отправки команды устройству**
+
+- [Исходник PlantUML](schemas/c4/code-command-sequence.puml)
+- [SVG-версия](schemas/c4/code-command-sequence.svg)
+
+![Последовательность команды устройству](schemas/c4/code-command-sequence.png)
 
 # Задание 3. Разработка ER-диаграммы
 

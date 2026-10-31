@@ -1,0 +1,27 @@
+@startuml
+!include <C4/C4_Component>
+
+title Компоненты Access Service
+
+Container_Ext(apiGateway, "API Gateway", "Kong / NGINX", "Маршрутизация и проверка запросов")
+ContainerDb_Ext(accessDB, "access-db", "PostgreSQL", "Пользователи, дома и членство")
+
+Container_Boundary(accessService, "Access Service") {
+  Component(authApi, "Auth API", "REST", "Вход, обновление и отзыв сессии")
+  Component(userApi, "User & House API", "REST/gRPC", "Профиль, дома и приглашения")
+  Component(membership, "Membership Service", "Go", "Членство и права доступа")
+  Component(tokenService, "Token Service", "Go", "Выпуск и проверка JWT")
+  ComponentDb(repository, "Access Repository", "PostgreSQL", "Доступ к данным")
+}
+
+Rel(apiGateway, authApi, "Вход и сессии", "REST")
+Rel(apiGateway, userApi, "Профиль и дома", "REST/gRPC")
+Rel(apiGateway, tokenService, "Проверка токена", "gRPC")
+Rel(authApi, membership, "Проверяет доступ", "вызов")
+Rel(authApi, tokenService, "Выпускает токен", "вызов")
+Rel(userApi, membership, "Проверяет права", "вызов")
+Rel(membership, repository, "Читает и пишет", "вызов")
+Rel(tokenService, repository, "Читает ключи и сессии", "вызов")
+Rel(repository, accessDB, "SQL", "driver")
+
+@enduml

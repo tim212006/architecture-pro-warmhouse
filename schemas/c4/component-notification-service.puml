@@ -1,0 +1,25 @@
+@startuml
+!include <C4/C4_Component>
+
+title Компоненты Notification Service
+
+ContainerQueue_Ext(eventBroker, "Брокер событий", "NATS JetStream", "События платформы")
+Container_Ext(pushProvider, "Провайдер уведомлений", "Email, SMS, push", "Внешняя доставка")
+
+Container_Boundary(notificationService, "Notification Service") {
+  Component(consumer, "Event Consumer", "Go", "Подписка на события")
+  Component(templateEngine, "Template Engine", "Go", "Шаблоны и персонализация")
+  Component(router, "Channel Router", "Go", "Выбор канала доставки")
+  Component(emailAdapter, "Email Adapter", "Go", "Отправка email")
+  Component(pushAdapter, "Push & SMS Adapter", "Go", "Отправка push и SMS")
+}
+
+Rel(eventBroker, consumer, "События устройств, сценариев и доступа", "NATS")
+Rel(consumer, templateEngine, "Передаёт событие", "вызов")
+Rel(templateEngine, router, "Формирует сообщение", "вызов")
+Rel(router, emailAdapter, "Email", "вызов")
+Rel(router, pushAdapter, "Push/SMS", "вызов")
+Rel(emailAdapter, pushProvider, "SMTP", "SMTP")
+Rel(pushAdapter, pushProvider, "HTTP API", "HTTPS")
+
+@enduml

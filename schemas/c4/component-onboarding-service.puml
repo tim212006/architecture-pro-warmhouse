@@ -1,0 +1,28 @@
+@startuml
+!include <C4/C4_Component>
+
+title Компоненты Onboarding Service
+
+Container_Ext(apiGateway, "API Gateway", "Kong / NGINX", "Маршрутизация запросов")
+Container_Ext(deviceService, "Device Service", "Go, REST/gRPC", "Реестр устройств")
+ContainerQueue_Ext(eventBroker, "Брокер событий", "NATS JetStream", "События подключения")
+ContainerDb_Ext(onboardingDB, "onboarding-db", "PostgreSQL", "Заявки и привязки устройств")
+
+Container_Boundary(onboardingService, "Onboarding Service") {
+  Component(onboardingApi, "Onboarding API", "REST", "Заявки на подключение и статус")
+  Component(claimService, "Device Claim Service", "Go", "QR-код и подтверждение владения")
+  Component(protocolMapper, "Protocol & Capability Mapper", "Go", "Сопоставление протокола и возможностей")
+  Component(provisioner, "Provisioning Coordinator", "Go", "Регистрация и первичная настройка")
+  ComponentDb(repository, "Onboarding Repository", "PostgreSQL", "Доступ к данным")
+}
+
+Rel(apiGateway, onboardingApi, "Подключение устройства", "REST")
+Rel(onboardingApi, claimService, "Создаёт заявку", "вызов")
+Rel(claimService, protocolMapper, "Определяет протокол и возможности", "вызов")
+Rel(protocolMapper, provisioner, "Передаёт план подключения", "вызов")
+Rel(provisioner, deviceService, "Регистрирует устройство", "REST/gRPC")
+Rel(provisioner, eventBroker, "Публикует onboarding.completed", "NATS")
+Rel(claimService, repository, "Читает и пишет", "вызов")
+Rel(repository, onboardingDB, "SQL", "driver")
+
+@enduml

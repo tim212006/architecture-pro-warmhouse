@@ -1,0 +1,33 @@
+@startuml
+!include <C4/C4_Component>
+
+title Компоненты Device Service
+
+Container_Ext(apiGateway, "API Gateway", "Kong / NGINX", "Маршрутизация запросов")
+ContainerQueue_Ext(eventBroker, "Брокер событий", "NATS JetStream", "Асинхронные события")
+ContainerDb_Ext(deviceDB, "device-db", "PostgreSQL", "Устройства, типы и состояние")
+
+Container_Boundary(deviceService, "Device Service") {
+  Component(api, "Device API", "REST/gRPC", "Запросы устройства и команд")
+  Component(registry, "Device Registry", "Go", "Реестр устройств, типов и возможностей")
+  Component(stateManager, "State Manager", "Go", "Desired и reported state устройства")
+  Component(commandHandler, "Command Handler", "Go", "Валидация и постановка команд")
+  Component(consumer, "Device Event Consumer", "Go", "Обработка событий от IoT Gateway")
+  Component(publisher, "Event Publisher", "Go", "Публикация доменных событий")
+  ComponentDb(repository, "Device Repository", "PostgreSQL", "Доступ к данным")
+}
+
+Rel(apiGateway, api, "Запросы к устройствам и командам", "REST/gRPC")
+Rel(api, registry, "Читает и изменяет устройства", "вызов")
+Rel(api, stateManager, "Читает состояние", "вызов")
+Rel(api, commandHandler, "Передаёт команду", "вызов")
+Rel(commandHandler, stateManager, "Сохраняет desired state", "вызов")
+Rel(commandHandler, publisher, "Публикует device.command", "вызов")
+Rel(consumer, stateManager, "Применяет reported state", "вызов")
+Rel(registry, repository, "Читает и пишет", "вызов")
+Rel(stateManager, repository, "Читает и пишет", "вызов")
+Rel(repository, deviceDB, "SQL", "JDBC/driver")
+Rel(eventBroker, consumer, "События состояния и результаты команд", "NATS")
+Rel(publisher, eventBroker, "device.command и device.state.changed", "NATS")
+
+@enduml

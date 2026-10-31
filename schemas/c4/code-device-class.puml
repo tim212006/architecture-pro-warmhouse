@@ -1,0 +1,70 @@
+@startuml
+title Device Service — модель агрегата Device (уровень кода)
+
+skinparam classAttributeIconSize 0
+
+package "Device Management" {
+
+  class Device <<Aggregate Root>> {
+    - id: DeviceId
+    - houseId: HouseId
+    - typeId: DeviceTypeId
+    - serialNumber: string
+    - name: string
+    - desiredState: DeviceState
+    - reportedState: DeviceState
+    - version: int
+    + assignToHouse(houseId: HouseId): void
+    + updateDesiredState(state: DeviceState): void
+    + applyReportedState(state: DeviceState): void
+    + validateCommand(command: Command): void
+  }
+
+  class DeviceType <<Entity>> {
+    - id: DeviceTypeId
+    - code: string
+    - name: string
+    - protocol: Protocol
+    + supports(capability: Capability): bool
+  }
+
+  class Capability <<Value Object>> {
+    - code: string
+    - valueType: string
+    - commandSchema: json
+    - telemetrySchema: json
+  }
+
+  class DeviceState <<Value Object>> {
+    - desired: map<CapabilityCode, Value>
+    - reported: map<CapabilityCode, Value>
+    - updatedAt: datetime
+  }
+
+  class Command <<Entity>> {
+    - id: CommandId
+    - deviceId: DeviceId
+    - capabilityCode: string
+    - payload: json
+    - status: CommandStatus
+    - createdAt: datetime
+  }
+
+  interface DeviceRepository {
+    + findById(id: DeviceId): Device
+    + save(device: Device): void
+  }
+
+  interface CommandPublisher {
+    + publish(command: Command): void
+  }
+}
+
+Device --> DeviceType : typeId
+DeviceType *-- Capability
+Device *-- DeviceState
+Device ..> Command : validates
+DeviceRepository ..> Device : persists
+CommandPublisher ..> Command : publishes
+
+@enduml

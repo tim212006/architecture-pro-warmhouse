@@ -1,0 +1,24 @@
+@startuml
+!include <C4/C4_Context>
+
+title Контекстная диаграмма C4 — целевая экосистема «Тёплый дом» (To-Be)
+
+Person(owner, "Владелец дома", "Самостоятельно покупает модули, подключает устройства, настраивает сценарии и смотрит телеметрию")
+Person(support, "Сотрудник поддержки", "Помогает пользователям и диагностирует подключение")
+
+System(platform, "Платформа умного дома «Тёплый дом»", "SaaS-экосистема: управление отоплением, светом, воротами, наблюдением и будущими устройствами")
+
+System_Ext(devices, "Устройства партнёров", "Модули отопления, света, ворот и датчики по стандартным протоколам")
+System_Ext(cameras, "Камеры и видеодомофоны", "Партнёрские устройства наблюдения")
+System_Ext(notificationProvider, "Провайдер уведомлений", "Email, SMS и push")
+System_Ext(paymentProvider, "Платёжный провайдер", "Оплата подписок и модулей; вне MVP")
+
+Rel(owner, platform, "Управляет домом, сценариями и подписками", "HTTPS")
+Rel(support, platform, "Диагностирует подключение и состояние", "HTTPS")
+Rel(devices, platform, "Передаёт телеметрию и состояние", "MQTT/TLS")
+Rel(platform, devices, "Отправляет команды", "MQTT/TLS")
+Rel(cameras, platform, "Передаёт видеопотоки", "RTSP/WebRTC")
+Rel(platform, notificationProvider, "Отправляет уведомления", "SMTP/API")
+Rel(platform, paymentProvider, "Проводит оплату", "HTTPS/API")
+
+@enduml
