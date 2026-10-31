@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"smarthome/db"
 	"smarthome/models"
@@ -18,13 +19,25 @@ import (
 type SensorHandler struct {
 	DB                 *db.DB
 	TemperatureService *services.TemperatureService
+	DeviceService      *services.DeviceService
+	TelemetryService   *services.TelemetryService
+	EventBus           *services.EventBus
 }
 
 // NewSensorHandler creates a new SensorHandler
-func NewSensorHandler(db *db.DB, temperatureService *services.TemperatureService) *SensorHandler {
+func NewSensorHandler(
+	db *db.DB,
+	temperatureService *services.TemperatureService,
+	deviceService *services.DeviceService,
+	telemetryService *services.TelemetryService,
+	eventBus *services.EventBus,
+) *SensorHandler {
 	return &SensorHandler{
 		DB:                 db,
 		TemperatureService: temperatureService,
+		DeviceService:      deviceService,
+		TelemetryService:   telemetryService,
+		EventBus:           eventBus,
 	}
 }
 
@@ -34,6 +47,7 @@ func (h *SensorHandler) RegisterRoutes(router *gin.RouterGroup) {
 	{
 		sensors.GET("", h.GetSensors)
 		sensors.GET("/:id", h.GetSensorByID)
+		sensors.GET("/:id/telemetry", h.GetSensorTelemetry)
 		sensors.POST("", h.CreateSensor)
 		sensors.PUT("/:id", h.UpdateSensor)
 		sensors.DELETE("/:id", h.DeleteSensor)
@@ -64,6 +78,9 @@ func (h *SensorHandler) GetSensors(c *gin.Context) {
 				log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
 			}
 		}
+
+		h.syncDevice(sensors[i])
+		h.recordTelemetry(sensors[i])
 	}
 
 	c.JSON(http.StatusOK, sensors)
@@ -96,6 +113,9 @@ func (h *SensorHandler) GetSensorByID(c *gin.Context) {
 			log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
 		}
 	}
+
+	h.syncDevice(sensor)
+	h.recordTelemetry(sensor)
 
 	c.JSON(http.StatusOK, sensor)
 }
@@ -142,6 +162,8 @@ func (h *SensorHandler) CreateSensor(c *gin.Context) {
 		return
 	}
 
+	h.syncDevice(sensor)
+
 	c.JSON(http.StatusCreated, sensor)
 }
 
@@ -165,6 +187,8 @@ func (h *SensorHandler) UpdateSensor(c *gin.Context) {
 		return
 	}
 
+	h.syncDevice(sensor)
+
 	c.JSON(http.StatusOK, sensor)
 }
 
@@ -181,6 +205,8 @@ func (h *SensorHandler) DeleteSensor(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	h.deleteDevice(fmt.Sprintf("%d", id))
 
 	c.JSON(http.StatusOK, gin.H{"message": "Sensor deleted successfully"})
 }
@@ -209,5 +235,140 @@ func (h *SensorHandler) UpdateSensorValue(c *gin.Context) {
 		return
 	}
 
+	sensor, err := h.DB.GetSensorByID(context.Background(), id)
+	if err == nil {
+		h.syncDevice(sensor)
+		h.recordTelemetry(sensor)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Sensor value updated successfully"})
+}
+
+// GetSensorTelemetry handles GET /api/v1/sensors/:id/telemetry
+func (h *SensorHandler) GetSensorTelemetry(c *gin.Context) {
+	id := c.Param("id")
+	if _, err := strconv.Atoi(id); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sensor ID"})
+		return
+	}
+
+	if h.TelemetryService == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Telemetry service is not configured"})
+		return
+	}
+
+	limit := 50
+	if rawLimit := c.Query("limit"); rawLimit != "" {
+		parsedLimit, err := strconv.Atoi(rawLimit)
+		if err != nil || parsedLimit <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be a positive integer"})
+			return
+		}
+		limit = parsedLimit
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	readings, err := h.TelemetryService.List(ctx, id, limit)
+	if err != nil {
+		log.Printf("Failed to fetch telemetry for sensor %s: %v", id, err)
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Telemetry service is unavailable"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"items": readings,
+		"total": len(readings),
+	})
+}
+
+func (h *SensorHandler) syncDevice(sensor models.Sensor) {
+	if h.DeviceService != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		err := h.DeviceService.Upsert(ctx, services.DevicePayload{
+			ExternalID: fmt.Sprintf("%d", sensor.ID),
+			Name:       sensor.Name,
+			Type:       string(sensor.Type),
+			Location:   sensor.Location,
+			Unit:       sensor.Unit,
+			Status:     sensor.Status,
+			State: map[string]any{
+				"value": sensor.Value,
+				"unit":  sensor.Unit,
+			},
+		})
+		if err != nil {
+			log.Printf("Failed to sync sensor %d with device-service: %v", sensor.ID, err)
+		}
+	}
+
+	if h.EventBus != nil {
+		eventCtx, eventCancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer eventCancel()
+		if err := h.EventBus.PublishDeviceRegistered(eventCtx, services.DeviceRegisteredEvent{
+			ExternalID: fmt.Sprintf("%d", sensor.ID),
+			Name:       sensor.Name,
+			Type:       string(sensor.Type),
+			Location:   sensor.Location,
+			Unit:       sensor.Unit,
+			Status:     sensor.Status,
+			State: map[string]any{
+				"value": sensor.Value,
+				"unit":  sensor.Unit,
+			},
+		}); err != nil {
+			log.Printf("Failed to publish device registration for sensor %d: %v", sensor.ID, err)
+		}
+	}
+}
+
+func (h *SensorHandler) recordTelemetry(sensor models.Sensor) {
+	if sensor.Type != models.Temperature {
+		return
+	}
+
+	if h.EventBus != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := h.EventBus.PublishTelemetry(ctx, services.TelemetryRecordedEvent{
+			DeviceID:   fmt.Sprintf("%d", sensor.ID),
+			Metric:     "temperature",
+			Value:      sensor.Value,
+			Unit:       sensor.Unit,
+			RecordedAt: sensor.LastUpdated,
+		}); err != nil {
+			log.Printf("Failed to publish telemetry for sensor %d: %v", sensor.ID, err)
+		}
+		return
+	}
+
+	if h.TelemetryService != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		if err := h.TelemetryService.Record(ctx, services.TelemetryRecord{
+			DeviceID:   fmt.Sprintf("%d", sensor.ID),
+			Metric:     "temperature",
+			Value:      sensor.Value,
+			Unit:       sensor.Unit,
+			RecordedAt: sensor.LastUpdated,
+		}); err != nil {
+			log.Printf("Failed to record telemetry for sensor %d: %v", sensor.ID, err)
+		}
+	}
+}
+
+func (h *SensorHandler) deleteDevice(externalID string) {
+	if h.DeviceService == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := h.DeviceService.Delete(ctx, externalID); err != nil {
+		log.Printf("Failed to delete device %s from device-service: %v", externalID, err)
+	}
 }

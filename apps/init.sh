@@ -31,6 +31,8 @@ fi
 echo "All services are up and running!"
 echo "The API is available at http://localhost:8080"
 echo "The temperature API is available at http://localhost:8081"
+echo "The device service is available at http://localhost:8082"
+echo "The telemetry service is available at http://localhost:8083"
 echo ""
 echo "To view logs, run: ${compose[*]} logs -f"
 echo "To stop the services, run: ${compose[*]} down"

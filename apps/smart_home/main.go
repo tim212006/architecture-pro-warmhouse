@@ -32,6 +32,23 @@ func main() {
 	temperatureService := services.NewTemperatureService(temperatureAPIURL)
 	log.Printf("Temperature service initialized with API URL: %s\n", temperatureAPIURL)
 
+	deviceServiceURL := getEnv("DEVICE_SERVICE_URL", "http://device-service:8080")
+	deviceService := services.NewDeviceService(deviceServiceURL)
+	log.Printf("Device service initialized with API URL: %s\n", deviceServiceURL)
+
+	telemetryServiceURL := getEnv("TELEMETRY_SERVICE_URL", "http://telemetry-service:8080")
+	telemetryService := services.NewTelemetryService(telemetryServiceURL)
+	log.Printf("Telemetry service initialized with API URL: %s\n", telemetryServiceURL)
+
+	eventBus := services.NewEventBus(getEnv("NATS_URL", ""))
+	if err := eventBus.Connect(context.Background()); err != nil {
+		log.Printf("NATS is unavailable; asynchronous integration is disabled: %v", err)
+		eventBus = nil
+	}
+	if eventBus != nil {
+		defer eventBus.Close()
+	}
+
 	// Initialize router
 	router := gin.Default()
 
@@ -46,7 +63,13 @@ func main() {
 	apiRoutes := router.Group("/api/v1")
 
 	// Register sensor routes
-	sensorHandler := handlers.NewSensorHandler(database, temperatureService)
+	sensorHandler := handlers.NewSensorHandler(
+		database,
+		temperatureService,
+		deviceService,
+		telemetryService,
+		eventBus,
+	)
 	sensorHandler.RegisterRoutes(apiRoutes)
 
 	// Start server

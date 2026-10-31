@@ -446,4 +446,146 @@ curl -s http://localhost:8080/api/v1/sensors | python3 -m json.tool
 1. Создайте новые микросервисы для управления телеметрией и устройствами (с простейшей логикой), которые будут интегрированы с существующим монолитным приложением. Каждый микросервис на своем ООП языке.
 2. Обеспечьте взаимодействие между микросервисами и монолитом (при желании с помощью брокера сообщений), чтобы постепенно перенести функциональность из монолита в микросервисы. 
 
-В результате у вас должны быть созданы Dockerfiles и docker-compose для запуска микросервисов. 
+В результате у вас должны быть созданы Dockerfiles и docker-compose для запуска микросервисов.
+
+**Ответ.** MVP реализован в каталоге [`apps/`](apps/):
+
+- [`apps/device-service`](apps/device-service) — сервис управления устройствами на Go. Он регистрирует устройства, хранит их состояние и ставит команды в очередь.
+- [`apps/telemetry-service`](apps/telemetry-service) — сервис телеметрии на Python. Он принимает события из NATS, сохраняет показания и отдаёт историю или последнее значение по устройству.
+- [`apps/smart_home`](apps/smart_home) — существующий монолит, который выступает точкой входа для плавной миграции.
+- [`apps/docker-compose.yml`](apps/docker-compose.yml) — запускает монолит, оба микросервиса, эмулятор температуры, PostgreSQL и NATS JetStream.
+
+Микросервисы написаны на разных языках: `device-service` — Go, `telemetry-service` — Python. В Go-сервисе выделены слои `domain`, `usecase`, `adapter` и `config`, в Python-сервисе — модели, репозиторий, REST API и отдельный NATS consumer. Каждый сервис владеет своей базой данных.
+
+### Взаимодействие с монолитом
+
+1. `POST /api/v1/sensors` сохраняет датчик в исходной базе монолита, публикует `device.registered` в NATS и синхронно обновляет `device-service` для обратной совместимости. Идентификатор датчика передаётся как `external_id`.
+2. `GET /api/v1/sensors` получает актуальную температуру из `temperature-api`, синхронизирует состояние устройства с `device-service` и публикует `telemetry.recorded` в NATS.
+3. `GET /api/v1/sensors/:id` и `PATCH /api/v1/sensors/:id/value` также синхронизируют состояние и телеметрию.
+4. `DELETE /api/v1/sensors/:id` удаляет соответствующее устройство из `device-service`.
+5. `GET /api/v1/sensors/:id/telemetry` проксирует историю показаний из `telemetry-service`.
+
+Основной межсервисный обмен выполняется через NATS JetStream. `device-service` подписан на `device.registered`, а Python `telemetry-service` — на `telemetry.recorded`. Consumer подтверждает событие только после успешной записи или upsert, поэтому временная ошибка приводит к повторной доставке.
+
+События используют общие поля `eventId`, `eventType`, `occurredAt` и `traceId`. В `telemetry-service` поле `event_id` уникально, поэтому повторная доставка не создаёт дубль показания. Для чтения истории и ручных операций сохранены REST API.
+
+### API микросервисов
+
+`device-service` доступен на порту `8082`:
+
+- `GET /health` — проверка доступности.
+- `GET /api/v1/devices` — список устройств.
+- `POST /api/v1/devices` — регистрация или обновление устройства по `external_id`.
+- `GET /api/v1/devices/{externalId}` — карточка устройства.
+- `PATCH /api/v1/devices/{externalId}/state` — изменение статуса и сообщаемого состояния.
+- `DELETE /api/v1/devices/{externalId}` — удаление устройства.
+- `POST /api/v1/devices/{externalId}/commands` — постановка команды в очередь.
+- `GET /api/v1/devices/{externalId}/commands` — список команд устройства.
+
+`telemetry-service` доступен на порту `8083`:
+
+- `GET /health` — проверка доступности.
+- `POST /api/v1/telemetry` — сохранение показания.
+- `GET /api/v1/telemetry?device_id=1&metric=temperature&limit=50` — история показаний.
+- `GET /api/v1/telemetry/latest?device_id=1&metric=temperature` — последнее показание.
+- `GET /api/v1/devices/{deviceId}/telemetry` — показания конкретного устройства.
+
+REST API используется для чтения и ручных операций. Нормальный write-path от монолита выполняется асинхронно через NATS JetStream.
+
+Для сервисов используются отдельные базы данных `devices` и `telemetry`. Скрипты [`apps/device-service/init.sql`](apps/device-service/init.sql) и [`apps/telemetry-service/init.sql`](apps/telemetry-service/init.sql) подключаются к PostgreSQL через `docker-compose`. Брокер `nats:2.10-alpine` запускается с JetStream и хранит stream `WARMHOUSE`.
+
+### Запуск и проверка
+
+```bash
+cd apps
+./init.sh
+```
+
+Или:
+
+```bash
+cd apps
+docker compose up --build -d
+```
+
+После запуска можно проверить миграционный поток:
+
+```bash
+curl -s -X POST http://localhost:8080/api/v1/sensors \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Living Room Temperature","type":"temperature","location":"Living Room","unit":"°C"}'
+
+curl -s http://localhost:8080/api/v1/sensors
+curl -s 'http://localhost:8080/api/v1/sensors/1/telemetry'
+curl -s http://localhost:8082/api/v1/devices
+curl -s 'http://localhost:8083/api/v1/telemetry?device_id=1&metric=temperature'
+```
+
+Для повторной инициализации всех трёх баз необходимо удалить volume:
+
+```bash
+docker compose down -v
+```
+
+### Соответствие требованиям задания
+
+- Созданы два новых микросервиса: `device-service` для управления устройствами и `telemetry-service` для телеметрии.
+- Микросервисы написаны на разных языках: `device-service` — Go, `telemetry-service` — Python.
+- У каждого микросервиса есть собственный Dockerfile и отдельная база данных PostgreSQL.
+- Для асинхронного взаимодействия используется обязательный брокер NATS JetStream.
+- Монолит публикует `device.registered` и `telemetry.recorded`, а микросервисы принимают эти события через durable consumers.
+- Для чтения и ручных операций доступны REST API.
+- Монолит не требует запуска новых микросервисов или NATS: их недоступность логируется, но не блокирует запуск и работу основного API.
+
+### Проверка работоспособности
+
+Запустить весь стек:
+
+```bash
+cd apps
+docker compose up --build -d
+docker compose ps
+```
+
+Ожидаемый результат: `app`, `device-service`, `telemetry-service`, `nats`, `postgres` и `temperature-api` находятся в состоянии `healthy` или `Up`.
+
+Проверить создание устройства и публикацию телеметрии:
+
+```bash
+curl -fsS -X POST http://localhost:8080/api/v1/sensors \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Kitchen Temperature","type":"temperature","location":"Kitchen","unit":"°C"}'
+
+curl -fsS http://localhost:8080/api/v1/sensors
+curl -fsS http://localhost:8082/api/v1/devices
+curl -fsS 'http://localhost:8083/api/v1/telemetry?device_id=1&metric=temperature'
+curl -fsS 'http://localhost:8222/jsz?consumers=true'
+```
+
+В `jsz` у consumers должны быть `num_ack_pending: 0` после обработки, а в telemetry API должны появиться записи с уникальными `eventId`.
+
+Проверить работу монолита при отключённых микросервисах:
+
+```bash
+docker compose stop device-service telemetry-service nats
+
+curl -fsS http://localhost:8080/health
+curl -fsS -X POST http://localhost:8080/api/v1/sensors \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Bedroom Temperature","type":"temperature","location":"Bedroom","unit":"°C"}'
+curl -fsS http://localhost:8080/api/v1/sensors
+```
+
+Ожидаемый результат: все запросы к монолиту завершаются успешно. Состояние устройства и история телеметрии не обновляются, пока соответствующие сервисы или NATS остановлены, но операции монолита и получение актуальной температуры продолжают работать.
+
+Проверить запуск без микросервисов и брокера:
+
+```bash
+docker compose up -d postgres temperature-api
+docker compose up -d --force-recreate app
+docker compose ps
+curl -fsS http://localhost:8080/health
+curl -fsS http://localhost:8080/api/v1/sensors
+```
+
+Монолит стартует без `device-service`, `telemetry-service` и `nats`, пишет в лог сообщение о недоступности асинхронной интеграции и продолжает обслуживать собственные функции.

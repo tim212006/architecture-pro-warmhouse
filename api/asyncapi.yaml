@@ -44,8 +44,18 @@ channels:
       Показание, полученное от устройства. Событие публикует IoT Gateway,
       а Telemetry Service сохраняет его во временном ряду.
     messages:
-      TelemetryRecorded:
-        $ref: '#/components/messages/TelemetryRecorded'
+        TelemetryRecorded:
+          $ref: '#/components/messages/TelemetryRecorded'
+
+  deviceRegistered:
+    address: device.registered
+    title: Регистрация устройства
+    description: |
+      Монолит публикует событие при создании или синхронизации датчика.
+      Device Service принимает событие и выполняет идемпотентный upsert.
+    messages:
+      DeviceRegistered:
+        $ref: '#/components/messages/DeviceRegistered'
 
   deviceStateChanged:
     address: device.state.changed
@@ -73,7 +83,7 @@ operations:
     action: receive
     channel:
       $ref: '#/channels/telemetryRecorded'
-    summary: Telemetry Service принимает показание устройства
+    summary: Python Telemetry Service принимает показание устройства
     description: |
       Сервис телеметрии подписан на канал `telemetry.recorded` и сохраняет
       показания в своём хранилище.
@@ -81,6 +91,19 @@ operations:
       - $ref: '#/channels/telemetryRecorded/messages/TelemetryRecorded'
     tags:
       - name: telemetry
+
+  receiveDeviceRegistered:
+    action: receive
+    channel:
+      $ref: '#/channels/deviceRegistered'
+    summary: Go Device Service принимает регистрацию устройства
+    description: |
+      Device Service подписан на канал `device.registered` и обновляет
+      собственное хранилище устройств.
+    messages:
+      - $ref: '#/channels/deviceRegistered/messages/DeviceRegistered'
+    tags:
+      - name: devices
 
   publishDeviceStateChanged:
     action: send
@@ -111,6 +134,18 @@ operations:
 
 components:
   messages:
+    DeviceRegistered:
+      name: DeviceRegistered
+      title: Устройство зарегистрировано
+      summary: Метаданные и текущее состояние датчика из монолита.
+      contentType: application/json
+      headers:
+        $ref: '#/components/schemas/EventHeaders'
+      payload:
+        $ref: '#/components/schemas/DeviceRegisteredPayload'
+      tags:
+        - name: devices
+
     TelemetryRecorded:
       name: TelemetryRecorded
       title: Показание телеметрии
@@ -249,6 +284,36 @@ components:
           type: string
           format: date-time
           description: Время измерения на устройстве.
+
+    DeviceRegisteredPayload:
+      type: object
+      required:
+        - external_id
+        - name
+        - type
+        - location
+        - status
+      properties:
+        external_id:
+          type: string
+          description: Идентификатор датчика в монолите.
+        name:
+          type: string
+        type:
+          type: string
+          example: temperature
+        location:
+          type: string
+          example: Living Room
+        unit:
+          type: string
+          example: celsius
+        status:
+          type: string
+          example: active
+        state:
+          type: object
+          additionalProperties: true
 
     DeviceStateChangedPayload:
       type: object
