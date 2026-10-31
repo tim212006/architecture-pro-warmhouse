@@ -382,6 +382,60 @@ Locations - название комнаты, sensorId - идентификато
 
 Ревьюер будет проверять точно так же.
 
+**Ответ.** Задание выполнено в каталоге [`apps/`](apps/):
+
+- [`apps/temperature-api`](apps/temperature-api) — эмулятор датчика на Go с чистым разделением слоёв: `internal/domain` (сущности и каталог комнат), `internal/usecase` (сценарий получения показания), `internal/adapter` (HTTP, генератор случайных значений, часы), `internal/config` (настройки из окружения), `cmd/temperature-api` (сборка зависимостей и запуск).
+- Эндпоинты: `GET /temperature?location=...` и `GET /temperature/{sensorId}` возвращают случайную температуру, `GET /health` используется для healthcheck. Приложение слушает порт `8081`.
+- [`apps/temperature-api/Dockerfile`](apps/temperature-api/Dockerfile) — многоступенчатая сборка на `golang:1.23-alpine` и запуск в `alpine:3.20` от непривилегированного пользователя.
+- [`apps/docker-compose.yml`](apps/docker-compose.yml) — Postgres с монтированием `./smart_home/init.sql`, `temperature-api` и монолит `app`. У Postgres и `temperature-api` есть healthcheck, монолит стартует после их готовности.
+- [`apps/init.sh`](apps/init.sh) — запускает `docker compose` (или `docker-compose`), ждёт готовности Postgres и печатает адреса сервисов.
+
+Слои зависят от абстракций: use case работает с интерфейсами `RoomDirectory`, `Generator` и `Clock`, а конкретные реализации подставляются в `main`. Это даёт тестируемость и соответствует SOLID: у каждого слоя одна причина для изменения, зависимости направлены внутрь, а реализации можно заменить без правки бизнес-логики.
+
+Проверка Go-кода:
+
+```bash
+cd apps/temperature-api
+go test ./...
+go vet ./...
+```
+
+Запуск и проверка:
+
+```bash
+cd apps
+./init.sh
+```
+
+Или вручную:
+
+```bash
+cd apps
+docker compose up --build -d
+```
+
+После этого `Create Sensor` и `Get All Sensors` из Postman-коллекции работают на `http://localhost:8080`. При каждом `Get All Sensors` монолит запрашивает `/temperature/{sensorId}` у `temperature-api`, поэтому значение температуры меняется. Если нужно пересоздать базу с нуля: `docker compose down -v`.
+
+Для проверки работоспособности использовал следующие команды:
+```bash
+# 1. Health
+curl -s http://localhost:8081/health
+
+# 2. Разные значения при повторных запросах
+curl -s 'http://localhost:8081/temperature?location=Living%20Room'; echo
+curl -s 'http://localhost:8081/temperature?location=Living%20Room'; echo
+curl -s http://localhost:8081/temperature/1; echo
+curl -s http://localhost:8081/temperature/2; echo
+
+# 3. Создать датчик и несколько раз получить список
+curl -s -X POST http://localhost:8080/api/v1/sensors \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Living Room Temperature","type":"temperature","location":"Living Room","unit":"°C"}'
+
+curl -s http://localhost:8080/api/v1/sensors | python3 -m json.tool
+curl -s http://localhost:8080/api/v1/sensors | python3 -m json.tool
+```
+ ()
 
 # **Задание 6. Разработка MVP**
 
