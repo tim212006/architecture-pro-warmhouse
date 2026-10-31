@@ -1,0 +1,69 @@
+@startuml
+title ER — Access Service и Onboarding Service
+
+left to right direction
+hide circle
+skinparam shadowing false
+skinparam nodesep 35
+skinparam ranksep 50
+
+package "Access Service" {
+  entity "users" as users #DDEBF7 {
+    * id : uuid <<PK>>
+    --
+    * email : citext
+    * password_hash : varchar
+    * full_name : varchar
+    * status : varchar
+    * created_at : timestamptz
+  }
+
+  entity "houses" as houses #DDEBF7 {
+    * id : uuid <<PK>>
+    --
+    * address : varchar
+    * timezone : varchar
+    * created_at : timestamptz
+  }
+
+  entity "house_memberships" as house_memberships #DDEBF7 {
+    * user_id : uuid <<PK, FK>>
+    * house_id : uuid <<PK, FK>>
+    --
+    * role : varchar
+    * status : varchar
+    * created_at : timestamptz
+  }
+}
+
+package "Onboarding Service" {
+  entity "device_claims" as device_claims #EDEDED {
+    * id : uuid <<PK>>
+    --
+    * house_id : uuid <<logical FK>>
+    * user_id : uuid <<logical FK>>
+    * serial_number : varchar
+    * device_id : uuid <<logical FK>>
+    * status : varchar
+    * created_at : timestamptz
+  }
+}
+
+entity "devices" as devices <<Device Service>> #F2F2F2 {
+  * id : uuid <<PK>>
+  --
+  * serial_number : varchar
+}
+
+users ||--o{ house_memberships
+houses ||--o{ house_memberships
+houses ||--o{ device_claims
+users ||--o{ device_claims
+devices |o--o| device_claims
+
+note right of device_claims
+  house_id, user_id и device_id — логические ссылки.
+  Физических FK между сервисами нет.
+end note
+
+@enduml

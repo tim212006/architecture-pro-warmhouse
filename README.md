@@ -211,6 +211,70 @@
 
 Добавьте сюда ER-диаграмму. Она должна отражать ключевые сущности системы, их атрибуты и тип связей между ними.
 
+**Ответ.** Чтобы диаграмма читалась, ER разделена на общую схему для оценки масштаба, обзорную схему ключевых сущностей и три детальные схемы по владельцам данных. Общая схема показывает все таблицы и связи, обзорная убирает служебные сущности, детальные раскрывают логические ссылки между сервисами.
+
+**Общая ER-диаграмма — все сущности**
+
+- [Исходник PlantUML](schemas/er/er-full.puml)
+- [SVG-версия](schemas/er/er-full.svg)
+
+![Общая ER-диаграмма экосистемы «Тёплый дом»](schemas/er/er-full.png)
+
+**Обзорная ER-диаграмма**
+
+- [Исходник PlantUML](schemas/er/er-overview.puml)
+- [SVG-версия](schemas/er/er-overview.svg)
+
+![Обзорная ER-диаграмма экосистемы «Тёплый дом»](schemas/er/er-overview.png)
+
+На обзорной схеме намеренно нет `module_device_types`, `commands`, `scenario_actions` и `device_claims`: они раскрыты ниже и не перегружают восприятие.
+
+**Детальная ER: Access Service и Onboarding Service**
+
+- [Исходник PlantUML](schemas/er/er-access-onboarding.puml)
+- [SVG-версия](schemas/er/er-access-onboarding.svg)
+
+![ER Access Service и Onboarding Service](schemas/er/er-access-onboarding.png)
+
+**Детальная ER: Device Service**
+
+- [Исходник PlantUML](schemas/er/er-device.puml)
+- [SVG-версия](schemas/er/er-device.svg)
+
+![ER Device Service](schemas/er/er-device.png)
+
+**Детальная ER: Telemetry Service и Automation Service**
+
+- [Исходник PlantUML](schemas/er/er-telemetry-automation.puml)
+- [SVG-версия](schemas/er/er-telemetry-automation.svg)
+
+![ER Telemetry Service и Automation Service](schemas/er/er-telemetry-automation.png)
+
+**Владение сущностями:**
+
+| Сервис | Сущности |
+|---|---|
+| Access Service | `users`, `houses`, `house_memberships` |
+| Device Service | `modules`, `device_types`, `module_device_types`, `house_modules`, `devices`, `commands` |
+| Telemetry Service | `telemetry_data` |
+| Automation Service | `scenarios`, `scenario_actions` |
+| Onboarding Service | `device_claims` |
+
+**Ключевые связи:**
+
+- Пользователь и дом связаны многие-ко-многим через `house_memberships`: один пользователь может иметь доступ к нескольким домам, а у дома может быть несколько членов семьи или гостей.
+- `modules` — каталог продаваемых комплектов, `module_device_types` задаёт состав комплекта, а `house_modules` фиксирует покупку и активацию модуля в конкретном доме.
+- Дом содержит много устройств, тип устройства задаёт его протокол и возможности, а `house_module_id` связывает устройство с купленным комплектом.
+- Одно устройство генерирует много записей `telemetry_data` и много `commands`; команда может быть создана пользователем или сценарием.
+- Дом содержит сценарии, сценарий состоит из упорядоченных действий над устройствами.
+- `device_claims` связывает заявку на самостоятельное подключение с домом, пользователем и созданным устройством.
+
+**Допущения:**
+
+- `Module` — продаваемый модульный комплект (SKU), а `HouseModule` — его активация в доме. Это разделяет каталог, покупку и установленные устройства.
+- Связи между сущностями разных сервисов логические: физических внешних ключей между базами микросервисов нет, каждый сервис владеет своей схемой.
+- Связь пользователя и дома выбрана как многие-ко-многим, а не один-ко-многим из примера задания: это нужно для доступа членов семьи и поддержки, но не мешает основной модели.
+
 # Задание 4. Создание и документирование API
 
 ### 1. Тип API

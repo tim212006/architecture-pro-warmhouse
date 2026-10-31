@@ -1,0 +1,95 @@
+@startuml
+title ER — Device Service
+
+left to right direction
+hide circle
+skinparam shadowing false
+skinparam nodesep 35
+skinparam ranksep 50
+
+package "Device Service" {
+  entity "modules" as modules #E2EFDA {
+    * id : uuid <<PK>>
+    --
+    * code : varchar <<unique>>
+    * name : varchar
+    * category : varchar
+    * description : text
+    * price : numeric
+    * currency : varchar
+    * status : varchar
+  }
+
+  entity "device_types" as device_types #E2EFDA {
+    * id : uuid <<PK>>
+    --
+    * code : varchar <<unique>>
+    * name : varchar
+    * category : varchar
+    * protocol : varchar
+    * manufacturer : varchar
+    * capabilities : jsonb
+  }
+
+  entity "module_device_types" as module_device_types #E2EFDA {
+    * module_id : uuid <<PK, FK>>
+    * device_type_id : uuid <<PK, FK>>
+    --
+    * quantity : int
+  }
+
+  entity "house_modules" as house_modules #E2EFDA {
+    * id : uuid <<PK>>
+    --
+    * house_id : uuid <<logical FK>>
+    * module_id : uuid <<FK>>
+    * status : varchar
+    * purchased_at : timestamptz
+    * activated_at : timestamptz
+  }
+
+  entity "devices" as devices #E2EFDA {
+    * id : uuid <<PK>>
+    --
+    * house_id : uuid <<logical FK>>
+    * type_id : uuid <<FK>>
+    * house_module_id : uuid <<FK>>
+    * serial_number : varchar <<unique>>
+    * name : varchar
+    * status : varchar
+    * firmware_version : varchar
+    * desired_state : jsonb
+    * reported_state : jsonb
+    * last_seen_at : timestamptz
+    * created_at : timestamptz
+  }
+
+  entity "commands" as commands #E2EFDA {
+    * id : uuid <<PK>>
+    --
+    * device_id : uuid <<FK>>
+    * requested_by : uuid <<logical FK>>
+    * capability_code : varchar
+    * payload : jsonb
+    * status : varchar
+    * created_at : timestamptz
+    * completed_at : timestamptz
+  }
+}
+
+modules ||--o{ module_device_types
+device_types ||--o{ module_device_types
+modules ||--o{ house_modules
+house_modules |o--o{ devices
+device_types ||--o{ devices
+devices ||--o{ commands
+
+note bottom of house_modules
+  house_id — логическая ссылка на Access Service.
+end note
+
+note bottom of commands
+  requested_by — логическая ссылка на пользователя.
+end note
+
+@enduml

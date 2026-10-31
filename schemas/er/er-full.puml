@@ -1,0 +1,160 @@
+@startuml
+title Общая ER-диаграмма экосистемы «Тёплый дом» — все сущности
+
+left to right direction
+hide circle
+skinparam shadowing false
+skinparam nodesep 28
+skinparam ranksep 65
+skinparam packageStyle rectangle
+
+package "Access Service" {
+  entity "users" as users #DDEBF7 {
+    * id : uuid <<PK>>
+    --
+    * email : citext
+    * full_name : varchar
+    * status : varchar
+  }
+
+  entity "houses" as houses #DDEBF7 {
+    * id : uuid <<PK>>
+    --
+    * address : varchar
+    * timezone : varchar
+  }
+
+  entity "house_memberships" as house_memberships #DDEBF7 {
+    * user_id : uuid <<PK, FK>>
+    * house_id : uuid <<PK, FK>>
+    --
+    * role : varchar
+  }
+}
+
+package "Device Service" {
+  entity "modules" as modules #E2EFDA {
+    * id : uuid <<PK>>
+    --
+    * code : varchar
+    * name : varchar
+    * category : varchar
+    * price : numeric
+  }
+
+  entity "device_types" as device_types #E2EFDA {
+    * id : uuid <<PK>>
+    --
+    * code : varchar
+    * name : varchar
+    * protocol : varchar
+    * capabilities : jsonb
+  }
+
+  entity "module_device_types" as module_device_types #E2EFDA {
+    * module_id : uuid <<PK, FK>>
+    * device_type_id : uuid <<PK, FK>>
+    --
+    * quantity : int
+  }
+
+  entity "house_modules" as house_modules #E2EFDA {
+    * id : uuid <<PK>>
+    --
+    * house_id : uuid <<logical FK>>
+    * module_id : uuid <<FK>>
+    * status : varchar
+  }
+
+  entity "devices" as devices #E2EFDA {
+    * id : uuid <<PK>>
+    --
+    * house_id : uuid <<logical FK>>
+    * type_id : uuid <<FK>>
+    * house_module_id : uuid <<FK>>
+    * serial_number : varchar
+    * desired_state : jsonb
+    * reported_state : jsonb
+  }
+
+  entity "commands" as commands #E2EFDA {
+    * id : uuid <<PK>>
+    --
+    * device_id : uuid <<FK>>
+    * requested_by : uuid <<logical FK>>
+    * capability_code : varchar
+    * status : varchar
+  }
+}
+
+package "Telemetry Service" {
+  entity "telemetry_data" as telemetry_data #FFF2CC {
+    * id : bigserial <<PK>>
+    --
+    * device_id : uuid <<logical FK>>
+    * metric : varchar
+    * value : numeric
+    * recorded_at : timestamptz
+  }
+}
+
+package "Automation Service" {
+  entity "scenarios" as scenarios #FCE4D6 {
+    * id : uuid <<PK>>
+    --
+    * house_id : uuid <<logical FK>>
+    * created_by : uuid <<logical FK>>
+    * name : varchar
+    * enabled : boolean
+    * trigger_type : varchar
+  }
+
+  entity "scenario_actions" as scenario_actions #FCE4D6 {
+    * id : uuid <<PK>>
+    --
+    * scenario_id : uuid <<FK>>
+    * device_id : uuid <<logical FK>>
+    * capability_code : varchar
+    * order_index : int
+  }
+}
+
+package "Onboarding Service" {
+  entity "device_claims" as device_claims #EDEDED {
+    * id : uuid <<PK>>
+    --
+    * house_id : uuid <<logical FK>>
+    * user_id : uuid <<logical FK>>
+    * serial_number : varchar
+    * device_id : uuid <<logical FK>>
+    * status : varchar
+  }
+}
+
+users ||--o{ house_memberships
+houses ||--o{ house_memberships
+houses ||--o{ house_modules
+modules ||--o{ house_modules
+modules ||--o{ module_device_types
+device_types ||--o{ module_device_types
+houses ||--o{ devices
+device_types ||--o{ devices
+house_modules |o--o{ devices
+devices ||--o{ commands
+users |o--o{ commands
+devices ||--o{ telemetry_data
+houses ||--o{ scenarios
+users |o--o{ scenarios
+scenarios ||--o{ scenario_actions
+devices |o--o{ scenario_actions
+houses ||--o{ device_claims
+users ||--o{ device_claims
+devices |o--o| device_claims
+
+note bottom of telemetry_data
+  Связи между сервисами логические: физических FK
+  между базами микросервисов нет. Цвет блока показывает
+  сервис-владельца сущности.
+end note
+
+@enduml

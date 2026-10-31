@@ -1,0 +1,80 @@
+@startuml
+title ER — Telemetry Service и Automation Service
+
+left to right direction
+hide circle
+skinparam shadowing false
+skinparam nodesep 35
+skinparam ranksep 50
+
+entity "devices" as devices <<Device Service>> #F2F2F2 {
+  * id : uuid <<PK>>
+  --
+  * house_id : uuid
+  * serial_number : varchar
+}
+
+entity "houses" as houses <<Access Service>> #F2F2F2 {
+  * id : uuid <<PK>>
+  --
+  * address : varchar
+}
+
+entity "users" as users <<Access Service>> #F2F2F2 {
+  * id : uuid <<PK>>
+  --
+  * email : citext
+}
+
+package "Telemetry Service" {
+  entity "telemetry_data" as telemetry_data #FFF2CC {
+    * id : bigserial <<PK>>
+    --
+    * device_id : uuid <<logical FK>>
+    * metric : varchar
+    * value : numeric
+    * unit : varchar
+    * recorded_at : timestamptz
+  }
+}
+
+package "Automation Service" {
+  entity "scenarios" as scenarios #FCE4D6 {
+    * id : uuid <<PK>>
+    --
+    * house_id : uuid <<logical FK>>
+    * created_by : uuid <<logical FK>>
+    * name : varchar
+    * enabled : boolean
+    * trigger_type : varchar
+    * trigger_config : jsonb
+    * created_at : timestamptz
+  }
+
+  entity "scenario_actions" as scenario_actions #FCE4D6 {
+    * id : uuid <<PK>>
+    --
+    * scenario_id : uuid <<FK>>
+    * device_id : uuid <<logical FK>>
+    * capability_code : varchar
+    * payload : jsonb
+    * order_index : int
+    * delay_seconds : int
+  }
+}
+
+devices ||--o{ telemetry_data
+houses ||--o{ scenarios
+users ||--o{ scenarios
+scenarios ||--o{ scenario_actions
+devices |o--o{ scenario_actions
+
+note bottom of telemetry_data
+  device_id — логическая ссылка на Device Service.
+end note
+
+note bottom of scenarios
+  house_id и created_by — логические ссылки на Access Service.
+end note
+
+@enduml
