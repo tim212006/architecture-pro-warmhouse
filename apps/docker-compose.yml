@@ -5,7 +5,8 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      #POSTGRES_DB: postgres
+      POSTGRES_DB: smarthome
     ports:
       - "5432:5432"
     volumes:
@@ -120,6 +121,8 @@ services:
       postgres:
         condition: service_healthy
       temperature-api:
+        condition: service_healthy
+      telemetry-service:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
